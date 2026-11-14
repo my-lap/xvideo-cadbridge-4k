@@ -1560,7 +1560,7 @@ textarea {
 }
 
 /* Blocchi Codice AutoLISP (.LSP) / SketchUp (.RB) / DXF */
-pre, code, #cadCodeOutput {
+pre, pre code, #cadCodeOutput, #lisp-output {
   background: var(--cb-code-bg) !important;
   color: var(--cb-code-text) !important;
   border: 2px solid var(--cb-border) !important;
@@ -1785,4 +1785,133 @@ button.dock-item.active {
   .app-shell {
     padding-bottom: calc(62px + env(safe-area-inset-bottom, 10px)) !important;
   }
+}
+
+
+/* ===== v18.2: 4 GREY THEMES + COLLAPSIBLE THEME DRAWER + INLINE CODE FIX ===== */
+/* 13. Grigio Ardesia Neutro (Slate Neutral Grey) */
+body[data-monitor-theme="13-slate-grey"] {
+  --cb-bg-main: #1e2229;
+  --cb-bg-panel: #272c35;
+  --cb-bg-card: #323844;
+  --cb-text-main: #f1f5f9;
+  --cb-text-muted: #cbd5e1;
+  --cb-accent: #38bdf8;
+  --cb-accent-2: #94a3b8;
+  --cb-btn-bg: #323844;
+  --cb-btn-text: #ffffff;
+  --cb-btn-border: #64748b;
+  --cb-btn-hover-bg: #38bdf8;
+  --cb-btn-hover-text: #0f172a;
+  --cb-code-bg: #15181e;
+  --cb-code-text: #7dd3fc;
+  --cb-border: rgba(148, 163, 184, 0.4);
+}
+
+/* 14. Grigio Cemento Caldo (Warm Concrete Grey) */
+body[data-monitor-theme="14-warm-concrete"] {
+  --cb-bg-main: #2b2b2e;
+  --cb-bg-panel: #36363a;
+  --cb-bg-card: #434348;
+  --cb-text-main: #f8fafc;
+  --cb-text-muted: #d4d4d8;
+  --cb-accent: #fbbf24;
+  --cb-accent-2: #a1a1aa;
+  --cb-btn-bg: #434348;
+  --cb-btn-text: #ffffff;
+  --cb-btn-border: #71717a;
+  --cb-btn-hover-bg: #fbbf24;
+  --cb-btn-hover-text: #18181b;
+  --cb-code-bg: #1f1f22;
+  --cb-code-text: #fde68a;
+  --cb-border: rgba(161, 161, 170, 0.45);
+}
+
+/* 15. Grigio Alluminio Chiaro (Silver Aluminium CAD) */
+body[data-monitor-theme="15-silver-cad"] {
+  --cb-bg-main: #d4d8dd;
+  --cb-bg-panel: #e5e7eb;
+  --cb-bg-card: #f3f4f6;
+  --cb-text-main: #111827;
+  --cb-text-muted: #374151;
+  --cb-accent: #2563eb;
+  --cb-accent-2: #4b5563;
+  --cb-btn-bg: #374151;
+  --cb-btn-text: #ffffff;
+  --cb-btn-border: #1f2937;
+  --cb-btn-hover-bg: #2563eb;
+  --cb-btn-hover-text: #ffffff;
+  --cb-code-bg: #1f2937;
+  --cb-code-text: #93c5fd;
+  --cb-border: #9ca3af;
+}
+
+/* 16. Grigio Antracite Matte (Anthracite Matte Studio) */
+body[data-monitor-theme="16-anthracite-matte"] {
+  --cb-bg-main: #141517;
+  --cb-bg-panel: #1c1e21;
+  --cb-bg-card: #26292e;
+  --cb-text-main: #f4f4f5;
+  --cb-text-muted: #a1a1aa;
+  --cb-accent: #e4e4e7;
+  --cb-accent-2: #71717a;
+  --cb-btn-bg: #26292e;
+  --cb-btn-text: #f4f4f5;
+  --cb-btn-border: #52525b;
+  --cb-btn-hover-bg: #e4e4e7;
+  --cb-btn-hover-text: #141517;
+  --cb-code-bg: #0c0d0e;
+  --cb-code-text: #d4d4d8;
+  --cb-border: rgba(113, 113, 122, 0.45);
+}
+
+/* Fix tag <code> inline: mai più box giganti sovrapposti al testo su iPhone */
+code:not(pre code) {
+  background: var(--cb-code-bg) !important;
+  color: var(--cb-code-text) !important;
+  border: 1px solid var(--cb-border) !important;
+  border-radius: 5px !important;
+  padding: 1px 5px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 0.85em !important;
+  line-height: 1.25 !important;
+  display: inline !important;
+  word-break: break-word !important;
+}
+
+/* Pannello scelta colori monitor a scomparsa (chiuso di default, si apre solo al click su 🎨 Temi) */
+#cbMonitorControlBarV16 {
+  display: none;
+  position: fixed !important;
+  top: max(54px, env(safe-area-inset-top, 54px)) !important;
+  left: 10px !important;
+  right: 10px !important;
+  max-width: 680px !important;
+  max-height: 78vh !important;
+  overflow-y: auto !important;
+  margin: 0 auto !important;
+  z-index: 99999 !important;
+  padding: 12px !important;
+  background: var(--cb-bg-panel) !important;
+  border: 2px solid var(--cb-accent) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.75) !important;
+}
+#cbMonitorControlBarV16.cb-drawer-open {
+  display: block !important;
+}
+#cbMonitorControlBarV16 .cb-theme-pills-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)) !important;
+  gap: 6px !important;
+  margin-top: 8px !important;
+}
+#cbMonitorControlBarV16 .cb-theme-pill-btn {
+  width: 100% !important;
+  min-height: 34px !important;
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
 }

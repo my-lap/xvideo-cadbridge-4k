@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cadbridge-pro-v18.0';
+const CACHE_NAME = 'cadbridge-pro-v18.2';
 const ASSETS = [
   './',
   './index.html',

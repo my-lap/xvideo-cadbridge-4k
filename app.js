@@ -1610,7 +1610,7 @@ window.installIosWebClip = function () {
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker
-      .register('./sw.js?v=18.0')
+      .register('./sw.js?v=18.2')
       .then((reg) => {
         reg.update().catch(() => {});
       })
@@ -7341,46 +7341,57 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 
 
 /* ===== v16.0: 12 MONITOR THEMES + ERGONOMIC BUTTONS + RESPONSIVE 0°/90° CONTROLLER ===== */
-/**
- * MonitorThemeAndResponsiveControllerV16
- * Inietta la Top-Bar fissa con 12 Varianti Colore Monitor ad alto contrasto,
- * raggruppa e ingrandisce i tasti per uso ergonomico Touch/Mouse e gestisce
- * il layout PC / Tablet / Smartphone sia Dritto (0° Portrait) sia Ruotato di 90° (Landscape Split-Screen).
- */
 class MonitorThemeAndResponsiveControllerV16 {
   constructor() {
-    this.version = "16.0.0-12THEMES-ERGONOMIC-90DEG";
+    this.version = "18.2.0-16THEMES-COLLAPSIBLE-DRAWER";
     this.themes = [
       { id: "1-obsidian-oled", label: "🌑 1. Obsidian OLED", swatch: "#060913", accent: "#f59e0b" },
       { id: "2-autocad-navy", label: "📐 2. AutoCAD Navy", swatch: "#071326", accent: "#00f5d4" },
-      { id: "3-archiproducts-ivory", label: "🏛️ 3. Archiproducts Ivory (Chiaro)", swatch: "#f6f3ec", accent: "#b45309" },
-      { id: "4-sunlight-cantiere", label: "☀️ 4. Cantiere Sole Diretto (Max Contrasto)", swatch: "#ffffff", accent: "#000000" },
+      { id: "3-archiproducts-ivory", label: "🏛️ 3. Archiproducts Ivory", swatch: "#f6f3ec", accent: "#b45309", light: true },
+      { id: "4-sunlight-cantiere", label: "☀️ 4. Cantiere Sole Diretto", swatch: "#ffffff", accent: "#000000", light: true },
       { id: "5-studio-sage", label: "🌲 5. Studio Verde Salvia", swatch: "#091917", accent: "#10b981" },
       { id: "6-blackrender-titanium", label: "🔥 6. Black Render Titanium", swatch: "#121214", accent: "#ff6b00" },
-      { id: "7-blueprint-cyan", label: "📘 7. Blueprint Tecnico Ciano", swatch: "#002b49", accent: "#38bdf8" },
-      { id: "8-luxury-burgundy", label: "🍷 8. Luxury Borgogna & Oro", swatch: "#1a0910", accent: "#fcd34d" },
-      { id: "9-nordic-daylight", label: "🧊 9. Nordic Daylight (Grigio Chiaro)", swatch: "#e2e8f0", accent: "#1d4ed8" },
-      { id: "10-matrix-terminal", label: "🟢 10. Terminal Matrix CAD", swatch: "#020b05", accent: "#22c55e" },
+      { id: "7-blueprint-cyan", label: "📘 7. Blueprint Ciano", swatch: "#002b49", accent: "#38bdf8" },
+      { id: "8-luxury-burgundy", label: "🍷 8. Luxury Borgogna", swatch: "#1a0910", accent: "#fcd34d" },
+      { id: "9-nordic-daylight", label: "🧊 9. Nordic Daylight", swatch: "#e2e8f0", accent: "#1d4ed8", light: true },
+      { id: "10-matrix-terminal", label: "🟢 10. Terminal Matrix", swatch: "#020b05", accent: "#22c55e" },
       { id: "11-cyber-neon", label: "🟣 11. Cyber-Arch Neon", swatch: "#0d051a", accent: "#e879f9" },
-      { id: "12-sepia-eyecare", label: "📜 12. Carta da Lucido Sepia (Riposo Occhi)", swatch: "#f3ead6", accent: "#9a3412" }
+      { id: "12-sepia-eyecare", label: "📜 12. Carta Lucido Sepia", swatch: "#f3ead6", accent: "#9a3412", light: true },
+      { id: "13-slate-grey", label: "🩶 13. Grigio Ardesia Neutro", swatch: "#1e2229", accent: "#38bdf8" },
+      { id: "14-warm-concrete", label: "🪨 14. Grigio Cemento Caldo", swatch: "#2b2b2e", accent: "#fbbf24" },
+      { id: "15-silver-cad", label: "⚙️ 15. Grigio Alluminio Chiaro", swatch: "#d4d8dd", accent: "#2563eb", light: true },
+      { id: "16-anthracite-matte", label: "🌫️ 16. Grigio Antracite Matte", swatch: "#141517", accent: "#e4e4e7" }
     ];
   }
 
   init() {
     const savedTheme = localStorage.getItem("CB_MONITOR_THEME_V16") || "2-autocad-navy";
-    this.applyTheme(savedTheme);
+    this.applyTheme(savedTheme, false);
     this.renderTopMonitorBar();
     this.upgradeAllButtonsToErgonomicGrid();
     this.setupOrientationListener();
   }
 
-  applyTheme(themeId) {
+  applyTheme(themeId, autoClose = true) {
     document.body.setAttribute("data-monitor-theme", themeId);
     localStorage.setItem("CB_MONITOR_THEME_V16", themeId);
     const activeSelect = document.getElementById("selMonitorThemeV16");
     if (activeSelect && activeSelect.value !== themeId) {
       activeSelect.value = themeId;
     }
+    if (autoClose) {
+      this.closeDrawer();
+    }
+  }
+
+  toggleDrawer() {
+    const bar = document.getElementById("cbMonitorControlBarV16");
+    if (bar) bar.classList.toggle("cb-drawer-open");
+  }
+
+  closeDrawer() {
+    const bar = document.getElementById("cbMonitorControlBarV16");
+    if (bar) bar.classList.remove("cb-drawer-open");
   }
 
   toggleLandscape90Mode() {
@@ -7389,62 +7400,88 @@ class MonitorThemeAndResponsiveControllerV16 {
     const badge = document.getElementById("lblOrientationStatusV16");
     if (badge) {
       badge.textContent = isLandscape
-        ? "📱🔄 Modalità Orizzontale 90° (Split-View Attiva)"
-        : "📱⬆️ Modalità Auto / Verticale 0°";
+        ? "📱🔄 Split-View 90° Attiva"
+        : "📱⬆️ Verticale 0° / Auto";
     }
   }
 
   renderTopMonitorBar() {
+    // 1. Aggiunge pulsante compatto 🎨 Temi e 🔄 0°/90° nella topbar esistente
+    const topActions = document.querySelector(".topbar-actions");
+    if (topActions && !document.getElementById("btnOpenThemeDrawerV16")) {
+      const themeBtn = document.createElement("button");
+      themeBtn.type = "button";
+      themeBtn.id = "btnOpenThemeDrawerV16";
+      themeBtn.className = "btn btn-cyan";
+      themeBtn.style.cssText = "padding:4px 8px !important;font-size:11px !important;min-height:30px !important;width:auto !important;";
+      themeBtn.title = "Apri/Chiudi selettore 16 Colori Monitor e Layout 0°/90°";
+      themeBtn.innerHTML = "🎨 Temi";
+      themeBtn.addEventListener("click", () => this.toggleDrawer());
+      topActions.prepend(themeBtn);
+    }
+
+    // 2. Crea il pannello a scomparsa (chiuso di default)
     if (document.getElementById("cbMonitorControlBarV16")) return;
-    const bar = document.createElement("header");
+    const bar = document.createElement("div");
     bar.id = "cbMonitorControlBarV16";
-    bar.style.cssText = "position:sticky;top:0;z-index:99999;padding:10px 14px;background:var(--cb-bg-panel);border-bottom:2px solid var(--cb-accent);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.45);";
 
     const pillsHtml = this.themes.map(t => `
       <button type="button" class="cb-theme-pill-btn" data-theme="${t.id}" title="${t.label}"
-        style="min-height:36px !important;padding:6px 10px !important;font-size:12px !important;border-radius:99px !important;background:${t.swatch} !important;color:${['3-archiproducts-ivory','4-sunlight-cantiere','9-nordic-daylight','12-sepia-eyecare'].includes(t.id) ? '#000' : '#fff'} !important;border:2px solid ${t.accent} !important;">
+        style="background:${t.swatch} !important;color:${t.light ? '#000' : '#fff'} !important;border:2px solid ${t.accent} !important;">
         ${t.label}
       </button>
     `).join("");
 
     bar.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span style="font-weight:900;font-size:14px;color:var(--cb-accent);letter-spacing:0.4px;">
-          🖥️ COLORI MONITOR (12 VARIANTI) & ERGONOMIA TASTI:
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <span style="font-weight:800;font-size:13px;color:var(--cb-accent);">
+          🎨 16 COLORI MONITOR (INCLUSI 4 GRIGI) & LAYOUT 0°/90°
         </span>
-        <select id="selMonitorThemeV16" aria-label="Seleziona variante colore monitor">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button type="button" id="btnToggleLandscape90V16" style="min-height:32px !important;padding:4px 9px !important;font-size:11px !important;width:auto !important;">
+            🔄 Layout 0° / 90°
+          </button>
+          <button type="button" id="btnCloseThemeDrawerV16" style="min-height:32px !important;padding:4px 10px !important;font-size:11px !important;width:auto !important;background:#ef4444 !important;color:#fff !important;border-color:#ef4444 !important;">
+            ✖ Chiudi & Salva
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+        <select id="selMonitorThemeV16" aria-label="Seleziona variante colore monitor" style="flex:1;min-width:180px;">
           ${this.themes.map(t => `<option value="${t.id}">${t.label}</option>`).join("")}
         </select>
-        <button type="button" id="btnToggleLandscape90V16" title="Attiva/Disattiva layout ruotato di 90 gradi affiancato">
-          🔄 Layout 0° / 90° (PC • Tablet • Cellulare)
-        </button>
-        <span id="lblOrientationStatusV16" style="font-size:12px;font-weight:700;color:var(--cb-accent-2);">
-          📱⬆️ Rilevamento Orientamento Attivo
+        <span id="lblOrientationStatusV16" style="font-size:11px;font-weight:700;color:var(--cb-accent-2);">
+          📱⬆️ Auto
         </span>
       </div>
-      <div style="display:flex;gap:6px;overflow-x:auto;max-width:100%;padding-bottom:4px;">
+      <div class="cb-theme-pills-grid">
         ${pillsHtml}
       </div>
     `;
 
-    document.body.prepend(bar);
+    document.body.appendChild(bar);
+    const savedTheme = localStorage.getItem("CB_MONITOR_THEME_V16") || "2-autocad-navy";
+    document.getElementById("selMonitorThemeV16").value = savedTheme;
 
     document.getElementById("selMonitorThemeV16").addEventListener("change", (e) => {
-      this.applyTheme(e.target.value);
+      this.applyTheme(e.target.value, true);
     });
     document.getElementById("btnToggleLandscape90V16").addEventListener("click", () => {
       this.toggleLandscape90Mode();
     });
+    document.getElementById("btnCloseThemeDrawerV16").addEventListener("click", () => {
+      this.closeDrawer();
+    });
     bar.querySelectorAll(".cb-theme-pill-btn").forEach(btn => {
-      btn.addEventListener("click", () => this.applyTheme(btn.getAttribute("data-theme")));
+      btn.addEventListener("click", () => this.applyTheme(btn.getAttribute("data-theme"), true));
     });
   }
 
   upgradeAllButtonsToErgonomicGrid() {
-    // Rende tutte le barre di pulsanti una griglia spaziosa e leggibile
     document.querySelectorAll("div, section").forEach(container => {
+      if (container.closest("#cbMonitorControlBarV16") || container.classList.contains("mobile-dock") || container.classList.contains("nav-tabs") || container.classList.contains("topbar-actions")) return;
       const directButtons = Array.from(container.children).filter(el => el.tagName === "BUTTON");
-      if (directButtons.length >= 4 && !container.classList.contains("mobile-dock") && !container.classList.contains("nav-tabs") && !container.classList.contains("topbar-actions")) {
+      if (directButtons.length >= 4) {
         container.classList.add("cb-ergonomic-btn-grid");
       }
     });
@@ -7456,8 +7493,8 @@ class MonitorThemeAndResponsiveControllerV16 {
       const badge = document.getElementById("lblOrientationStatusV16");
       if (badge && !document.body.classList.contains("cb-force-landscape-90")) {
         badge.textContent = isLandscape
-          ? `📐 Orizzontale 90° (${window.innerWidth}×${window.innerHeight}px)`
-          : `📱 Verticale 0° (${window.innerWidth}×${window.innerHeight}px)`;
+          ? `📐 90° (${window.innerWidth}×${window.innerHeight})`
+          : `📱 0° (${window.innerWidth}×${window.innerHeight})`;
       }
     };
     window.addEventListener("resize", updateOrientationBadge);
@@ -7466,19 +7503,16 @@ class MonitorThemeAndResponsiveControllerV16 {
   }
 }
 
-
 window.MonitorThemeAndResponsiveControllerV16 = MonitorThemeAndResponsiveControllerV16;
 window.monitorControllerV16 = new MonitorThemeAndResponsiveControllerV16();
 function initMonitorV16() {
   window.monitorControllerV16.init();
-  // Applica classe cb-viewport-column alla colonna principale del viewport per lo split-screen 48%/52%
   const ws = document.querySelector('.workspace-grid.cb-responsive-workspace');
   if (ws && ws.children.length >= 2) {
     ws.children[0].classList.add('cb-viewport-column');
   }
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMonitorV16); else initMonitorV16();
-
 
 /* ===== v18.0: ALL-IN-ONE MASTER DEPLOY (FIND-SKILLS + CED & 6 AGENTS + LIVE CAD/LSP/RB/PDF SYNC) ===== */
 class CADBridgeAllInOneMasterV18 {
