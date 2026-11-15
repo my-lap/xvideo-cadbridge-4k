@@ -319,6 +319,7 @@
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
             <button type="button" onclick="document.getElementById('v285-free-router-modal').style.display='none'" style="padding:7px 12px; border-radius:6px; background:rgba(244,63,94,0.18); border:1px solid #f43f5e; color:#fda4af; font-weight:800; cursor:pointer;">✕ Chiudi</button>
+            <button type="button" onclick="window.VercelSkillsBridge && window.VercelSkillsBridge.openModal()" style="padding:7px 10px; border-radius:6px; background:rgba(56,189,248,0.16); border:1px solid #38bdf8; color:#7dd3fc; font-weight:800; cursor:pointer;">⚡ vercel-labs/skills</button>
             <div style="display:flex; gap:8px;">
               <button type="button" onclick="window.saveInstantOpenRouterKey && window.saveInstantOpenRouterKey()" style="padding:7px 12px; border-radius:6px; background:rgba(56,189,248,0.18); border:1px solid #38bdf8; color:#38bdf8; font-weight:800; cursor:pointer;">💾 Salva Key</button>
               <button type="button" onclick="window.runInstantOpenRouterTest && window.runInstantOpenRouterTest()" style="padding:7px 14px; border-radius:6px; background:#00f2a1; border:none; color:#000; font-weight:900; cursor:pointer;">⚡ Test Connessione Free</button>

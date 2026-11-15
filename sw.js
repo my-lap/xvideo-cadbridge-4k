@@ -1,10 +1,11 @@
-const CACHE_NAME = 'cadbridge-pro-v28.8';
+const CACHE_NAME = 'cadbridge-pro-v28.9';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './js/free_llm_router.js',
+  './js/vercel_skills_bridge.js',
   './manifest.json'
 ];
 
