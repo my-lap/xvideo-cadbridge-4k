@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="XviDeo AI 4K" />
   <link rel="manifest" href="manifest.json?v=3.0" />
-  <link rel="stylesheet" href="styles.css?v=18.2" />
+  <link rel="stylesheet" href="styles.css?v=28.8" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -195,6 +195,9 @@
       </button>
       <button id="installPwaBtn" class="btn btn-cyan" style="display:none;padding:6px 9px;font-size:0.72rem;width:auto;">
         📥 App
+      </button>
+      <button id="btn-top-free-llm-v285" type="button" onclick="window.FreeLLMRouterV285 && window.FreeLLMRouterV285.openModal()" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;background:rgba(0,242,161,0.16);border:1px solid #00f2a1;color:#00f2a1;font-weight:800;" title="Motore AI Free 0€ (OpenRouter :free Auto-Discovery)">
+        🧠⚡ AI Free
       </button>
       <button id="openLicenseModalBtn" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;" title="Licenza Gumroad / Modalità">
         🔑
@@ -2324,6 +2327,8 @@
     window.addEventListener('orientationchange', updateIosSafeMode);
     updateIosSafeMode();
   </script>
-  <script src="app.js?v=18.2"></script>
+  <script src="js/free_llm_router.js?v=28.8"></script>
+  <script src="app.js?v=28.8"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(reg=>reg.update()));}</script>
 </body>
 </html>
