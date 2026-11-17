@@ -1,10 +1,11 @@
-const CACHE_NAME = 'cadbridge-pro-v31.3-dual-sync';
+const CACHE_NAME = 'cadbridge-pro-v31.3-dual-sync-bridge';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './js/free_llm_router.js',
+  './js/cad_ai_3d_bridge.js',
   './js/vercel_skills_bridge.js',
   './manifest.json'
 ];

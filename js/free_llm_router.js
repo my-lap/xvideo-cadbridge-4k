@@ -1,10 +1,12 @@
 /**
- * UNIVERSAL FREE LLM ROUTER v31.2-AUTO-MODAL — 7 PROVIDERS (0,00€) + VISION + AUTO-TUNE
- * Supporta: Qwen 3.8 27B Vision (:free), Nemotron 3 Ultra/Super VL (:free), OpenRouter (:free + openrouter/free), Groq, Cerebras, Mistral, GitHub, Ollama qwen4:27b
- * Include: Auto-Discovery Live Modelli :free, Supporto Multimodale imageDataUrl, autoCalibrateTradingParams() e Timeout 3.8s anti-hang
+ * UNIVERSAL FREE LLM ROUTER v31.3-DUAL-SYNC
+ * - Condiviso tra Trading Pro Ultimate & CADBridge Pro 4K.
+ * - Popola e sincronizza in tempo reale TUTTI i menu <select> dei modelli Free:
+ *   1. #free-llm-model-select (nel Modal superiore "🧠 ⚡ AI Free")
+ *   2. #qro-inline-model-select (nella barra della Sala Quantitativa sotto)
+ *   3. #cad-inline-model-select (nella barra inferiore di CADBridge Pro 4K)
  */
-
-(function() {
+(function () {
   'use strict';
 
   const STORAGE_KEYS = {
@@ -14,40 +16,34 @@
     MISTRAL: 'MISTRAL_FREE_KEY',
     GITHUB: 'GITHUB_MODELS_KEY',
     OLLAMA_URL: 'OLLAMA_LOCAL_URL',
-    PRIMARY_MODEL: 'FREE_LLM_PRIMARY_MODEL',
-    VERCEL_SKILLS_SYNC: 'VERCEL_SKILLS_REGISTRY'
+    PRIMARY_MODEL: 'FREE_LLM_PRIMARY_MODEL'
   };
 
   const DEFAULT_MODELS = [
-    { id: 'qwen/qwen3.8-27b:free', label: 'Qwen 3.8 27B Multimodal (262K Vision + Coding + Math — 0,00€)', provider: 'openrouter' },
-    { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', label: 'NVIDIA Nemotron 3 Ultra 550B (1M Context — 0,00€)', provider: 'openrouter' },
-    { id: 'nvidia/nemotron-3.5-super-vl:free', label: 'NVIDIA Nemotron 3.5 Super VL (Vision — 0,00€)', provider: 'openrouter' },
-    { id: 'openrouter/free', label: 'openrouter/free (Router Universale Auto-Free 0€)', provider: 'openrouter' },
-    { id: 'deepseek/deepseek-r1:free', label: 'DeepSeek-R1 (:free OpenRouter) — 0.00 EUR', provider: 'openrouter' },
-    { id: 'qwen/qwen-2.5-coder-32b-instruct:free', label: 'Qwen 2.5 Coder 32B (:free OpenRouter) — 0.00 EUR', provider: 'openrouter' },
-    { id: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek V3 0324 (:free OpenRouter) — 0.00 EUR', provider: 'openrouter' },
-    { id: 'dots-studio/dots-3-note-preview:free', label: 'Dots3-Note Preview (:free OpenRouter) — 0.00 EUR', provider: 'openrouter' },
-    { id: 'google/gemma-4-31b-it:free', label: 'Gemma 4 31B (:free OpenRouter) — 0.00 EUR', provider: 'openrouter' },
-    { id: 'cohere/north-mini-code:free', label: 'Cohere North Mini Code (:free OpenRouter) — 0.00 EUR', provider: 'openrouter' },
-    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Groq LPU 800 tok/s) — 0.00 EUR', provider: 'groq' },
-    { id: 'llama3.1-70b', label: 'Llama 3.1 70B (Cerebras 1M tok/d) — 0.00 EUR', provider: 'cerebras' },
-    { id: 'codestral-latest', label: 'Mistral Codestral Free — 0.00 EUR', provider: 'mistral' },
-    { id: 'DeepSeek-R1', label: 'GitHub Models DeepSeek-R1 — 0.00 EUR', provider: 'github' },
-    { id: 'qwen4:27b', label: 'Ollama Locale qwen4:27b (:11434 / Proxy :4000) — 0.00 EUR', provider: 'ollama' }
-  ];
-
-  const VERCEL_SKILLS_CATALOG = [
-    { repo: 'vercel-labs/skills', skill: 'find-skills', role: 'Skill-Hunter & Continuous Board', active: true },
-    { repo: 'vercel-labs/skills', skill: 'quant-orderflow-vpin', role: 'Microstructure CVD/VPIN Engine', active: true },
-    { repo: 'vercel-labs/skills', skill: 'zero-waste-token-engine', role: 'Surgical Patch & Token Compression', active: true },
-    { repo: 'vercel-labs/skills', skill: 'ergonomic-ui-0-90', role: 'Multi-Device 0°/90° Sub-Chart Sync', active: true }
+    { id: 'qwen/qwen3.8-27b:free', label: 'Qwen 3.8 27B Multimodal (262K Vision + Coding + Math — 0,00€)', provider: 'openrouter', vision: true },
+    { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', label: 'NVIDIA Nemotron 3 Ultra 550B (1M Context — 0,00€)', provider: 'openrouter', vision: false },
+    { id: 'nvidia/nemotron-3.5-super-vl:free', label: 'NVIDIA Nemotron 3.5 Super VL (Vision — 0,00€)', provider: 'openrouter', vision: true },
+    { id: 'openrouter/free', label: 'openrouter/free (Router Universale Auto-Free 0€)', provider: 'openrouter', vision: true },
+    { id: 'DeepSeek-R1', label: 'DeepSeek-R1 (:free OpenRouter / GitHub) — 0.00 EUR', provider: 'deepseek_hybrid', vision: false },
+    { id: 'Qwen-2.5-Coder-32B', label: 'Qwen 2.5 Coder 32B (:free OpenRouter) — 0.00 EUR', provider: 'openrouter', vision: false },
+    { id: 'DeepSeek-V3-0324', label: 'DeepSeek V3 0324 (:free OpenRouter / GitHub) — 0.00 EUR', provider: 'deepseek_hybrid', vision: false },
+    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Groq LPU 800 tok/s) — 0.00 EUR', provider: 'groq', vision: false },
+    { id: 'llama3.1-8b', label: 'Llama 3.1 70B/8B (Cerebras 1M tok/d) — 0.00 EUR', provider: 'cerebras', vision: false },
+    { id: 'codestral-latest', label: 'Mistral Codestral Free — 0.00 EUR', provider: 'mistral', vision: false },
+    { id: 'github/DeepSeek-R1', label: 'GitHub Models DeepSeek-R1 — 0.00 EUR', provider: 'github', vision: false },
+    { id: 'qwen4:27b', label: 'Ollama Locale qwen4:27b (:11434 / Proxy :4000) — 0.00 EUR', provider: 'ollama', vision: true },
+    { id: 'dots-studio/dots-3-note-preview:free', label: 'Dots Studio: Dots3-Note Preview (free) (:free Live 0€)', provider: 'openrouter', vision: true },
+    { id: 'nvidia/nemotron-3.5-lightning:free', label: 'NVIDIA: Nemotron 3.5 Lightning (free) (:free Live 0€)', provider: 'openrouter', vision: false },
+    { id: 'cohere/north-mini-code:free', label: 'Cohere: North Mini Code (free) (:free Live 0€)', provider: 'openrouter', vision: false },
+    { id: 'nvidia/nemotron-3-nano-omni:free', label: 'NVIDIA: Nemotron 3 Nano Omni (free) (:free Live 0€)', provider: 'openrouter', vision: true },
+    { id: 'google/gemma-4-26b-a4b:free', label: 'Google: Gemma 4 26B A4B (free) (:free Live 0€)', provider: 'openrouter', vision: true },
+    { id: 'google/gemma-4-31b:free', label: 'Google: Gemma 4 31B (free) (:free Live 0€)', provider: 'openrouter', vision: true }
   ];
 
   window.FreeLLMRouter = {
     version: '31.3-DUAL-SYNC',
     discoveredFreeModels: [...DEFAULT_MODELS],
     lastActiveNode: null,
-    openModal() { if (window.openFreeLLMModal) window.openFreeLLMModal(); },
 
     getKeys() {
       return {
@@ -57,15 +53,126 @@
         mistral: (localStorage.getItem(STORAGE_KEYS.MISTRAL) || '').trim(),
         github: (localStorage.getItem(STORAGE_KEYS.GITHUB) || '').trim(),
         ollama: (localStorage.getItem(STORAGE_KEYS.OLLAMA_URL) || 'http://localhost:11434/v1/chat/completions').trim(),
-        primaryModel: localStorage.getItem(STORAGE_KEYS.PRIMARY_MODEL) || 'openrouter/free'
+        primaryModel: localStorage.getItem(STORAGE_KEYS.PRIMARY_MODEL) || 'qwen/qwen3.8-27b:free'
       };
     },
 
+    setPrimaryModel(modelId) {
+      if (!modelId) return;
+      localStorage.setItem(STORAGE_KEYS.PRIMARY_MODEL, modelId);
+      this.populateAllSelects();
+      this.updateStatusBadge(`🟢 0,00€ (${modelId})`, true);
+    },
+
+    populateAllSelects() {
+      const current = localStorage.getItem(STORAGE_KEYS.PRIMARY_MODEL) || 'qwen/qwen3.8-27b:free';
+      const selectors = document.querySelectorAll(
+        '#free-llm-model-select, #qro-inline-model-select, #cad-inline-model-select, .free-llm-synced-select'
+      );
+      selectors.forEach(sel => {
+        sel.innerHTML = '';
+        this.discoveredFreeModels.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = m.label;
+          if (m.id === current) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      });
+    },
+
+    populateSelect() {
+      this.populateAllSelects();
+    },
+
+    ensureModalDOM() {
+      let backdrop = document.getElementById('free-llm-modal-backdrop');
+      if (backdrop) return backdrop;
+
+      backdrop = document.createElement('div');
+      backdrop.id = 'free-llm-modal-backdrop';
+      backdrop.style.cssText = `
+        display: none; position: fixed; inset: 0; background: rgba(2, 6, 14, 0.84);
+        backdrop-filter: blur(6px); z-index: 999999; justify-content: center;
+        align-items: center; padding: 14px; font-family: system-ui, -apple-system, monospace; color: #e2e8f0;
+      `;
+
+      const inStyle = `width:100%; background:#050911; color:#00e5ff; border:1px solid #334155; padding:8px 10px; border-radius:6px; font-size:12px; font-family:monospace; box-sizing:border-box; margin-top:4px;`;
+
+      backdrop.innerHTML = `
+        <div style="background:#09101d; border:2px solid #00e676; border-radius:12px; max-width:660px; width:100%; max-height:90vh; overflow-y:auto; padding:18px 20px; box-shadow:0 20px 60px rgba(0,0,0,0.85); box-sizing:border-box;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,230,118,0.25); padding-bottom:10px; margin-bottom:12px;">
+            <div>
+              <b style="color:#00e676; font-size:15px;">🧠 ⚡ ROUTER AI TOP-FREE (QWEN 4 / DEEPSEEK-R1 / NEMOTRON 550B)</b>
+              <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Sincronizzato Sopra & Sotto • 0,00€ Garantiti • Vision & 3D Bridge</div>
+            </div>
+            <button type="button" id="free-llm-close-x" style="background:#1e293b; color:#f8fafc; border:1px solid #475569; border-radius:6px; padding:4px 10px; cursor:pointer; font-weight:800;">✕ Chiudi</button>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11.5px; color:#ffd54f; font-weight:700;">Modello Primario Live (Qwen 3.8/4 27B Vision+Code, DeepSeek-R1/V3, Nemotron 3 Ultra 550B):</label>
+            <select id="free-llm-model-select" class="free-llm-synced-select" style="${inStyle} color:#f8fafc; border-color:#38bdf8; font-weight:700;"></select>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:10px; margin-bottom:12px;">
+            <div>
+              <label style="font-size:11px; color:#cbd5e1; font-weight:700;">🔑 OpenRouter Key (:free Qwen 3.8 / Nemotron 550B):</label>
+              <input type="password" id="free-llm-key-openrouter" placeholder="sk-or-v1-..." style="${inStyle}" />
+            </div>
+            <div>
+              <label style="font-size:11px; color:#cbd5e1; font-weight:700;">🐋 GitHub Token (DeepSeek-R1 / DeepSeek-V3 Free):</label>
+              <input type="password" id="free-llm-key-github" placeholder="ghp_... oppure github_pat_..." style="${inStyle}" />
+            </div>
+            <div>
+              <label style="font-size:11px; color:#cbd5e1; font-weight:700;">🚀 Groq Cloud Key (Llama 3.3 70B 800 tok/s):</label>
+              <input type="password" id="free-llm-key-groq" placeholder="gsk_..." style="${inStyle}" />
+            </div>
+            <div>
+              <label style="font-size:11px; color:#cbd5e1; font-weight:700;">⚡ Cerebras / Mistral Codestral Key:</label>
+              <input type="password" id="free-llm-key-cerebras" placeholder="csk-..." style="${inStyle}" />
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px; color:#94a3b8;">🖥️ Endpoint Locale Ollama (Qwen4 27B / DeepSeek-R1 locale):</label>
+            <input type="text" id="free-llm-key-ollama" value="http://localhost:11434/v1/chat/completions" style="${inStyle}" />
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+            <button type="button" id="free-llm-btn-save" style="flex:1; background:#065f46; color:#fff; border:1px solid #00e676; padding:9px 12px; border-radius:6px; cursor:pointer; font-weight:800; font-size:12px;">💾 Salva Chiavi & Modello</button>
+            <button type="button" id="free-llm-btn-test" style="flex:1; background:#006064; color:#fff; border:1px solid #00e5ff; padding:9px 12px; border-radius:6px; cursor:pointer; font-weight:800; font-size:12px;">⚡ Test Ping Live (0,00€)</button>
+          </div>
+          <div id="free-llm-status-box" style="background:#050911; border:1px solid rgba(0,229,255,0.3); border-radius:6px; padding:10px 12px; font-size:11.5px; color:#38bdf8; line-height:1.45;">
+            🟢 Connesso. Tutti i piani Free compaiono sia qui che nel selettore rapido in fondo alla pagina.
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(backdrop);
+
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) window.closeFreeLLMModal(); });
+      document.getElementById('free-llm-close-x').addEventListener('click', () => window.closeFreeLLMModal());
+      document.getElementById('free-llm-btn-save').addEventListener('click', () => this.saveKeysFromModal());
+      document.getElementById('free-llm-btn-test').addEventListener('click', () => window.runInstantOpenRouterTest());
+      document.getElementById('free-llm-model-select').addEventListener('change', (e) => this.setPrimaryModel(e.target.value));
+
+      this.populateAllSelects();
+      return backdrop;
+    },
+
+    bindTopBarButton() {
+      document.addEventListener('click', (ev) => {
+        const btn = ev.target && ev.target.closest ? ev.target.closest('button, a, [role="button"], div[onclick]') : null;
+        if (!btn) return;
+        if (btn.closest('#free-llm-modal-backdrop') || btn.closest('#quant-readonly-drawer') || btn.closest('#cad-qwen4-drawer')) return;
+        const txt = (btn.textContent || '').trim();
+        const id = (btn.id || '').toLowerCase();
+        if (txt.includes('AI Free') || txt.includes('Qwen/DeepSeek') || id.includes('free-llm') || id.includes('aifree')) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          window.openFreeLLMModal();
+        }
+      }, true);
+    },
+
     saveKeysFromModal() {
-      const getVal = (id) => {
-        const el = document.getElementById(id);
-        return el ? el.value.trim() : null;
-      };
+      const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : null; };
       const orKey = getVal('free-llm-key-openrouter') ?? getVal('free-llm-key-input');
       if (orKey !== null) localStorage.setItem(STORAGE_KEYS.OPENROUTER, orKey);
       const groqKey = getVal('free-llm-key-groq');
@@ -79,20 +186,19 @@
       const olUrl = getVal('free-llm-key-ollama');
       if (olUrl !== null) localStorage.setItem(STORAGE_KEYS.OLLAMA_URL, olUrl);
       const modSel = getVal('free-llm-model-select');
-      if (modSel) localStorage.setItem(STORAGE_KEYS.PRIMARY_MODEL, modSel);
+      if (modSel) this.setPrimaryModel(modSel);
 
-      this.updateStatusBadge('🟢 0,00€ Free Router Ready', true);
-      this.setStatusBox('✅ Chiavi salvate in localStorage. Catena a 7 Provider + vercel-labs/skills attiva a 0,00€.');
+      this.setStatusBox('✅ Impostazioni salvate e sincronizzate sopra e sotto! Modello attivo: <b>' + (modSel || this.getKeys().primaryModel) + '</b>');
       return this.getKeys();
     },
 
     updateStatusBadge(text, ok = true) {
-      const badge = document.getElementById('free-llm-status-badge');
-      if (badge) {
+      const badges = document.querySelectorAll('#free-llm-status-badge, #qro-active-model-pill, #cad-active-model-pill');
+      badges.forEach(badge => {
         badge.textContent = text;
         badge.style.borderColor = ok ? '#00ff88' : '#ffaa00';
         badge.style.color = ok ? '#00ff88' : '#ffaa00';
-      }
+      });
     },
 
     setStatusBox(html) {
@@ -113,65 +219,29 @@
             (m.id && m.id.endsWith(':free')) ||
             (m.pricing && String(m.pricing.prompt) === '0' && String(m.pricing.completion) === '0')
           );
-          const priorityKeywords = ['qwen', 'deepseek', 'llama-3.3', 'gemini', 'mistral', 'particle', 'ling'];
+          const priorityKeywords = ['qwen', 'deepseek', 'nemotron', 'gemma-4', 'north-mini', 'dots-3', 'llama-3.3'];
           liveFree.sort((a, b) => {
             const aP = priorityKeywords.findIndex(k => a.id.toLowerCase().includes(k));
             const bP = priorityKeywords.findIndex(k => b.id.toLowerCase().includes(k));
             return (aP === -1 ? 99 : aP) - (bP === -1 ? 99 : bP);
           });
-          const seen = new Set(DEFAULT_MODELS.map(d => d.id));
-          const mapped = liveFree.filter(m => !seen.has(m.id)).slice(0, 28).map(m => ({
+          const mapped = liveFree.slice(0, 30).map(m => ({
             id: m.id,
             label: `${m.name || m.id} (:free Live 0€)`,
-            provider: 'openrouter'
+            provider: 'openrouter',
+            vision: /vl|vision|qwen3\.8|omni|dots|gemma-4/i.test(m.id)
           }));
           this.discoveredFreeModels = [
             ...DEFAULT_MODELS,
-            ...mapped
+            ...mapped.filter(m => !DEFAULT_MODELS.some(d => d.id === m.id))
           ];
-          this.populateSelect();
+          this.populateAllSelects();
         }
-      } catch (e) {
-        // Fallback silenzioso su DEFAULT_MODELS
-      }
+      } catch (e) {}
       return this.discoveredFreeModels;
     },
 
-    setPrimaryModel(modelId) {
-      if (!modelId) return;
-      try { localStorage.setItem(STORAGE_KEYS.PRIMARY_MODEL, modelId); } catch (e) {}
-      const targets = new Set([
-        document.getElementById('free-llm-model-select'),
-        document.getElementById('qro-inline-model-select'),
-        ...document.querySelectorAll('.free-llm-synced-select')
-      ].filter(Boolean));
-      targets.forEach(sel => { if (sel.value !== modelId) sel.value = modelId; });
-    },
-
-    populateSelect() {
-      return this.populateAllSelects();
-    },
-
-    populateAllSelects() {
-      const current = localStorage.getItem(STORAGE_KEYS.PRIMARY_MODEL) || 'qwen/qwen3.8-27b:free';
-      const targets = new Set([
-        document.getElementById('free-llm-model-select'),
-        document.getElementById('qro-inline-model-select'),
-        ...document.querySelectorAll('.free-llm-synced-select')
-      ].filter(Boolean));
-      targets.forEach(sel => {
-        sel.innerHTML = '';
-        this.discoveredFreeModels.forEach(m => {
-          const opt = document.createElement('option');
-          opt.value = m.id;
-          opt.textContent = m.label;
-          if (m.id === current) opt.selected = true;
-          sel.appendChild(opt);
-        });
-      });
-    },
-
-    async callWithTimeout(url, options, timeoutMs = 3800) {
+    async callWithTimeout(url, options, timeoutMs = 4800) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -184,41 +254,71 @@
       }
     },
 
-    async complete(promptText, systemPrompt = 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.', imageDataUrl = null) {
-      if (systemPrompt && typeof systemPrompt === 'object') {
-        imageDataUrl = systemPrompt.imageDataUrl || imageDataUrl;
-        systemPrompt = systemPrompt.systemPrompt || 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.';
-      }
-      const keys = this.saveKeysFromModal();
+    async complete(promptText, systemPrompt = 'Sei il Direttore Quantitativo & Architetturale Qwen/DeepSeek. Rispondi in modo conciso e operativo.', options = {}) {
+      const keys = this.getKeys();
+      const imageDataUrl = options.imageDataUrl || null;
+      const maxTokens = options.maxTokens || 280;
       const candidates = [];
 
-      if (keys.openrouter) {
-        const primary = keys.primaryModel || 'qwen/qwen3.8-27b:free';
+      const buildUserContent = (supportsVision) => {
+        if (imageDataUrl && supportsVision) {
+          return [
+            { type: 'text', text: promptText },
+            { type: 'image_url', image_url: { url: imageDataUrl } }
+          ];
+        }
+        return promptText;
+      };
+
+      const wantDeepSeek = /deepseek/i.test(keys.primaryModel);
+
+      if (wantDeepSeek && keys.github) {
         candidates.push({
-          name: `OpenRouter (${primary})`,
-          url: 'https://openrouter.ai/api/v1/chat/completions',
-          headers: { 'Authorization': `Bearer ${keys.openrouter}`, 'Content-Type': 'application/json' },
-          model: primary
+          name: `GitHub Models (${keys.primaryModel})`,
+          url: 'https://models.inference.ai.azure.com/chat/completions',
+          headers: { 'Authorization': `Bearer ${keys.github}`, 'Content-Type': 'application/json' },
+          model: keys.primaryModel.includes('V3') ? 'DeepSeek-V3-0324' : 'DeepSeek-R1',
+          vision: false
         });
-        if (primary !== 'openrouter/free') {
+      }
+
+      if (keys.openrouter) {
+        const cleanPrimary = (
+          keys.primaryModel &&
+          !keys.primaryModel.startsWith('DeepSeek-') &&
+          !keys.primaryModel.startsWith('Qwen-2.5') &&
+          !keys.primaryModel.startsWith('github/')
+        ) ? keys.primaryModel : 'qwen/qwen3.8-27b:free';
+
+        const orChain = [
+          cleanPrimary,
+          'qwen/qwen3.8-27b:free',
+          'nvidia/nemotron-3.5-super-vl:free',
+          'nvidia/nemotron-3-ultra-550b-a55b:free',
+          'cohere/north-mini-code:free',
+          'dots-studio/dots-3-note-preview:free',
+          'google/gemma-4-31b:free',
+          'openrouter/free'
+        ];
+        [...new Set(orChain)].forEach(modId => {
           candidates.push({
-            name: 'OpenRouter (openrouter/free)',
+            name: `OpenRouter (${modId})`,
             url: 'https://openrouter.ai/api/v1/chat/completions',
             headers: { 'Authorization': `Bearer ${keys.openrouter}`, 'Content-Type': 'application/json' },
-            model: 'openrouter/free'
+            model: modId,
+            vision: /vl|qwen3\.8|omni|dots|gemma-4|free$/i.test(modId)
           });
-        }
-        this.discoveredFreeModels
-          .filter(m => m.provider === 'openrouter' && m.id !== primary && m.id !== 'openrouter/free')
-          .slice(0, 4)
-          .forEach(m => {
-            candidates.push({
-              name: `OpenRouter (${m.id})`,
-              url: 'https://openrouter.ai/api/v1/chat/completions',
-              headers: { 'Authorization': `Bearer ${keys.openrouter}`, 'Content-Type': 'application/json' },
-              model: m.id
-            });
-          });
+        });
+      }
+
+      if (keys.github && !wantDeepSeek) {
+        candidates.push({
+          name: 'GitHub Models (DeepSeek-R1)',
+          url: 'https://models.inference.ai.azure.com/chat/completions',
+          headers: { 'Authorization': `Bearer ${keys.github}`, 'Content-Type': 'application/json' },
+          model: 'DeepSeek-R1',
+          vision: false
+        });
       }
 
       if (keys.groq) {
@@ -226,55 +326,14 @@
           name: 'Groq LPU (llama-3.3-70b-versatile)',
           url: 'https://api.groq.com/openai/v1/chat/completions',
           headers: { 'Authorization': `Bearer ${keys.groq}`, 'Content-Type': 'application/json' },
-          model: 'llama-3.3-70b-versatile'
+          model: 'llama-3.3-70b-versatile',
+          vision: false
         });
       }
-
-      if (keys.cerebras) {
-        candidates.push({
-          name: 'Cerebras (llama3.1-8b)',
-          url: 'https://api.cerebras.ai/v1/chat/completions',
-          headers: { 'Authorization': `Bearer ${keys.cerebras}`, 'Content-Type': 'application/json' },
-          model: 'llama3.1-8b'
-        });
-      }
-
-      if (keys.mistral) {
-        candidates.push({
-          name: 'Mistral Codestral',
-          url: 'https://codestral.mistral.ai/v1/chat/completions',
-          headers: { 'Authorization': `Bearer ${keys.mistral}`, 'Content-Type': 'application/json' },
-          model: 'codestral-latest'
-        });
-      }
-
-      if (keys.github) {
-        candidates.push({
-          name: 'GitHub Models (gpt-4o-mini)',
-          url: 'https://models.inference.ai.azure.com/chat/completions',
-          headers: { 'Authorization': `Bearer ${keys.github}`, 'Content-Type': 'application/json' },
-          model: 'gpt-4o-mini'
-        });
-      }
-
-      if (keys.ollama) {
-        candidates.push({
-          name: 'Ollama Locale (qwen4:27b)',
-          url: keys.ollama,
-          headers: { 'Content-Type': 'application/json' },
-          model: 'qwen4:27b'
-        });
-      }
-
-      const userContent = imageDataUrl
-        ? [{ type: 'text', text: promptText }, { type: 'image_url', image_url: { url: imageDataUrl } }]
-        : promptText;
 
       const errors = [];
       for (const node of candidates) {
         try {
-          const isVisionCapable = node.model.includes('qwen3.8') || node.model.includes('-vl') || node.model.includes('qwen4') || node.model === 'openrouter/free';
-          const msgContent = (imageDataUrl && isVisionCapable) ? userContent : promptText;
           const res = await this.callWithTimeout(node.url, {
             method: 'POST',
             headers: node.headers,
@@ -282,11 +341,11 @@
               model: node.model,
               messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: msgContent }
+                { role: 'user', content: buildUserContent(node.vision) }
               ],
-              max_tokens: 240
+              max_tokens: maxTokens
             })
-          }, 3800);
+          }, 4800);
 
           if (res.ok) {
             const json = await res.json();
@@ -303,84 +362,31 @@
         }
       }
 
-      // Verifica /api/v1/auth/key se i nodi chat sono saturi
-      if (keys.openrouter) {
-        try {
-          const authRes = await this.callWithTimeout('https://openrouter.ai/api/v1/auth/key', {
-            headers: { 'Authorization': `Bearer ${keys.openrouter}` }
-          }, 2500);
-          if (authRes.ok) {
-            this.updateStatusBadge('🟢 0,00€ Connesso (openrouter/free)', true);
-            return {
-              ok: true,
-              model: 'openrouter/free',
-              reply: 'Ping ricevuto: i 6 Agenti Quantitativi CED risultano connessi al router gratuito.'
-            };
-          }
-        } catch (e) {}
-      }
-
       return {
         ok: false,
-        error: errors.length ? `Failover esaurito: ${errors.join(' | ')}` : 'Inserisci almeno 1 API Key gratuita (es. OpenRouter sk-or-v1-...)'
+        error: errors.length ? `Failover: ${errors.join(' | ')}` : 'Inserisci la chiave gratuita nel pannello AI Free'
       };
     },
 
-    async autoCalibrateTradingParams(marketContext = {}) {
-      const { regime = 'RANGE', vpinPct = 45, vsaFriction = 1.5, winRateEst = 55, profitFactor = 1.3 } = marketContext;
-      const clamp = (v, lo, hi, step) => {
-        const n = Math.max(lo, Math.min(hi, Number(v) || lo));
-        return step ? Math.round(n / step) * step : n;
-      };
-      const fallbackParams = {
-        vpLookback: String(regime).includes('TREND') ? 45 : 75,
-        vpRows: String(regime).includes('TREND') ? 20 : 28,
-        vwapSigmaSpike: Number(vsaFriction) > 2.2 ? 2.2 : 2.6,
-        vpinToxicThreshold: Number(vpinPct) > 65 ? 0.62 : 0.70,
-        minConfidenceGate: Number(winRateEst) < 52 ? 80 : 70
-      };
-      const prompt = `Sei un quant strategist. Calibra i 5 parametri per: Regime=${regime}, VPIN=${vpinPct}%, VSA=${vsaFriction}, WinRate=${winRateEst}%, PF=${profitFactor}. Rispondi SOLO con un JSON valido: {"vpLookback":20..150,"vpRows":12..48,"vwapSigmaSpike":1.5..4.0,"vpinToxicThreshold":0.40..0.90,"minConfidenceGate":50..90,"reason":"max 15 parole"}.`;
-      const res = await this.complete(prompt, 'Rispondi esclusivamente in JSON valido senza markdown.');
-      if (res.ok && res.reply) {
-        try {
-          const m = res.reply.match(/\{[\s\S]*\}/);
-          if (m) {
-            const parsed = JSON.parse(m[0]);
-            return {
-              ok: true,
-              model: res.model,
-              params: {
-                vpLookback: clamp(parsed.vpLookback, 20, 150, 5),
-                vpRows: clamp(parsed.vpRows, 12, 48, 4),
-                vwapSigmaSpike: +clamp(parsed.vwapSigmaSpike, 1.5, 4.0, 0.1).toFixed(1),
-                vpinToxicThreshold: +clamp(parsed.vpinToxicThreshold, 0.40, 0.90, 0.02).toFixed(2),
-                minConfidenceGate: clamp(parsed.minConfidenceGate, 50, 90, 5)
-              },
-              reason: parsed.reason || `Calibrazione AI completata per ${regime}.`
-            };
-          }
-        } catch (e) {}
-      }
-      return {
-        ok: false,
-        model: 'Local-Quant-Fallback',
-        params: fallbackParams,
-        reason: `Auto-calibrazione locale su ${regime} (VPIN ${vpinPct}%, VSA ${vsaFriction}).`
-      };
+    async generateCAD3DAndVideoScene(cadSpecs, floorplanDataUrl = null) {
+      const sys = `Sei Qwen-4 3D Architect & Digital Twin Engine. Genera:
+      1) Parametri JSON camera path 3D (eye, target, fov, keyframes) e materiali PBR.
+      2) Uno snippet Python Blender (bpy) pronto all'uso per estrudere i muri/volumi 3D.
+      3) Il prompt cinematografico 4K con timecode per XviDeo AI Studio.`;
+      const prompt = `Ricostruisci la scena 3D e il piano di regia 4K da queste specifiche: ${JSON.stringify(cadSpecs)}`;
+      return await this.complete(prompt, sys, { imageDataUrl: floorplanDataUrl, maxTokens: 450 });
     }
   };
 
   window.FreeLLMRouterV285 = window.FreeLLMRouter;
   window.AntigravityInfiniteFreeRouterV28 = window.FreeLLMRouter;
-
-  window.saveInstantOpenRouterKey = function() {
+  window.saveInstantOpenRouterKey = function () { window.FreeLLMRouter.saveKeysFromModal(); };
+  window.runInstantOpenRouterTest = async function () {
+    window.FreeLLMRouter.ensureModalDOM();
     window.FreeLLMRouter.saveKeysFromModal();
-  };
-
-  window.runInstantOpenRouterTest = async function() {
-    window.FreeLLMRouter.setStatusBox('⏳ Verifica istantanea chiave + Auto-discovery :free & ping live in corso...');
+    window.FreeLLMRouter.setStatusBox('⏳ Test live Qwen 3.8/4 + DeepSeek + Nemotron 550B (0,00€) in corso...');
     await window.FreeLLMRouter.discoverOpenRouterFreeModels();
-    const res = await window.FreeLLMRouter.complete('Rispondi con: Ping ricevuto: i 6 Agenti Quantitativi CED risultano connessi al router gratuito.');
+    const res = await window.FreeLLMRouter.complete('Rispondi in una riga confermando il nome del modello attivo e che operi a 0,00€.');
     if (res.ok) {
       window.FreeLLMRouter.setStatusBox(`✅ Connesso a <b>${res.model}</b> (0,00€): ${res.reply}`);
     } else {
@@ -388,117 +394,38 @@
     }
   };
 
-  window.ensureFreeLLMModalDOM = function() {
-    let modal = document.getElementById('free-llm-modal-backdrop');
-    if (modal) return modal;
-    modal = document.createElement('div');
-    modal.id = 'free-llm-modal-backdrop';
-    modal.style.cssText = 'position:fixed; inset:0; z-index:99999; background:rgba(4,8,18,0.86); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; padding:12px;';
-    modal.innerHTML = `
-      <div style="width:100%; max-width:660px; max-height:92vh; overflow-y:auto; background:#0a1019; border:1.5px solid #00f2a1; border-radius:12px; padding:16px; color:#e2e8f0; font-family:system-ui,monospace; box-shadow:0 0 32px rgba(0,242,161,0.22);">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #1e293b;">
-          <div style="font-weight:900; color:#00f2a1; font-size:14px;">🧠⚡ AI FREE v31.2 — QWEN 3.8/4 27B VISION + DEEPSEEK + NEMOTRON (0,00€)</div>
-          <span id="free-llm-status-badge" style="border:1px solid #00f2a1; color:#00f2a1; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700;">🟢 0,00€ Free Router Ready</span>
-        </div>
-        <div style="margin-bottom:10px;">
-          <label style="display:block; font-size:11px; font-weight:700; color:#facc15; margin-bottom:4px;">Modello Primario Live (Qwen 3.8/4 27B Vision+Code, DeepSeek-R1/V3, Nemotron 3 Ultra 550B):</label>
-          <select id="free-llm-model-select" class="free-llm-synced-select" onchange="window.FreeLLMRouter && window.FreeLLMRouter.setPrimaryModel(this.value)" style="width:100%; padding:8px; background:#050911; border:1px solid #334155; border-radius:6px; color:#fff; font-size:12px;"></select>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:8px; margin-bottom:10px; font-size:11px;">
-          <div>
-            <label style="color:#38bdf8; font-weight:700;">1. OpenRouter Free Key (sk-or-v1-...):</label>
-            <input type="password" id="free-llm-key-openrouter" placeholder="sk-or-v1-..." style="width:100%; margin-top:3px; padding:6px; background:#050911; border:1px solid #334155; border-radius:5px; color:#fff;" />
-          </div>
-          <div>
-            <label style="color:#00f2a1; font-weight:700;">2. Groq LPU Free Key (800 tok/s):</label>
-            <input type="password" id="free-llm-key-groq" placeholder="gsk_... (opzionale)" style="width:100%; margin-top:3px; padding:6px; background:#050911; border:1px solid #334155; border-radius:5px; color:#fff;" />
-          </div>
-          <div>
-            <label style="color:#c084fc; font-weight:700;">3. Cerebras Free Key:</label>
-            <input type="password" id="free-llm-key-cerebras" placeholder="csk-... (opzionale)" style="width:100%; margin-top:3px; padding:6px; background:#050911; border:1px solid #334155; border-radius:5px; color:#fff;" />
-          </div>
-          <div>
-            <label style="color:#fb923c; font-weight:700;">4. Mistral Codestral Key:</label>
-            <input type="password" id="free-llm-key-mistral" placeholder="Key Mistral (opzionale)" style="width:100%; margin-top:3px; padding:6px; background:#050911; border:1px solid #334155; border-radius:5px; color:#fff;" />
-          </div>
-          <div>
-            <label style="color:#e2e8f0; font-weight:700;">5. GitHub Models Token:</label>
-            <input type="password" id="free-llm-key-github" placeholder="ghp_... (opzionale)" style="width:100%; margin-top:3px; padding:6px; background:#050911; border:1px solid #334155; border-radius:5px; color:#fff;" />
-          </div>
-          <div>
-            <label style="color:#2dd4bf; font-weight:700;">6. Ollama Locale (qwen4:27b):</label>
-            <input type="text" id="free-llm-key-ollama" value="http://localhost:11434/v1/chat/completions" style="width:100%; margin-top:3px; padding:6px; background:#050911; border:1px solid #334155; border-radius:5px; color:#fff;" />
-          </div>
-        </div>
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-top:10px;">
-          <button type="button" onclick="window.closeFreeLLMModal()" style="padding:7px 12px; border-radius:6px; background:rgba(244,63,94,0.18); border:1px solid #f43f5e; color:#fda4af; font-weight:800; cursor:pointer;">✕ Chiudi</button>
-          <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            <button type="button" onclick="window.saveInstantOpenRouterKey()" style="padding:7px 11px; border-radius:6px; background:rgba(56,189,248,0.18); border:1px solid #38bdf8; color:#7dd3fc; font-weight:800; cursor:pointer;">💾 Salva Key</button>
-            <button type="button" onclick="window.runInstantOpenRouterTest()" style="padding:7px 12px; border-radius:6px; background:#00f2a1; border:none; color:#000; font-weight:900; cursor:pointer;">⚡ Test Ping Live</button>
-            <button type="button" onclick="window.runFreeAutoCalibrateFromModal()" style="padding:7px 12px; border-radius:6px; background:rgba(168,85,247,0.22); border:1px solid #a855f7; color:#e9d5ff; font-weight:800; cursor:pointer;">🧠 Auto-Calibra Slider Trading</button>
-          </div>
-        </div>
-        <div id="free-llm-status-box" style="margin-top:10px; padding:9px; background:#05080f; border:1px solid #1e293b; border-radius:6px; font-family:monospace; font-size:11.5px;">
-          🟢 Pronto: seleziona Qwen 3.8 27B / DeepSeek / Nemotron e clicca "⚡ Test Ping Live".
-        </div>
-      </div>
-    `;
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) window.closeFreeLLMModal();
-    });
-    document.body.appendChild(modal);
-    window.FreeLLMRouter.populateSelect();
-    return modal;
+  window.openFreeLLMModal = function () {
+    const modal = window.FreeLLMRouter.ensureModalDOM();
+    modal.style.display = 'flex';
+    const keys = window.FreeLLMRouter.getKeys();
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+    setVal('free-llm-key-openrouter', keys.openrouter);
+    setVal('free-llm-key-groq', keys.groq);
+    setVal('free-llm-key-cerebras', keys.cerebras);
+    setVal('free-llm-key-mistral', keys.mistral);
+    setVal('free-llm-key-github', keys.github);
+    setVal('free-llm-key-ollama', keys.ollama);
+    window.FreeLLMRouter.populateAllSelects();
+    window.FreeLLMRouter.discoverOpenRouterFreeModels();
   };
 
-  window.runFreeAutoCalibrateFromModal = async function() {
-    window.FreeLLMRouter.setStatusBox('🧠 Auto-calibrazione parametri trading con Qwen 3.8 27B in corso...');
-    if (window.QuantReadonlyAddon && typeof window.QuantReadonlyAddon.runAutoTuneQwen === 'function') {
-      await window.QuantReadonlyAddon.runAutoTuneQwen();
-      const out = document.getElementById('qro-audit-output');
-      window.FreeLLMRouter.setStatusBox(out ? out.innerHTML : '✅ Parametri calibrati.');
-    } else {
-      const res = await window.FreeLLMRouter.autoCalibrateTradingParams({});
-      window.FreeLLMRouter.setStatusBox(`🧠 <b>[${res.model}]</b>: ${res.reason}`);
-    }
-  };
-
-  window.openFreeLLMModal = function() {
-    const modal = window.ensureFreeLLMModalDOM();
-    if (modal) {
-      modal.style.display = 'flex';
-      window.FreeLLMRouter.populateSelect();
-      const keys = window.FreeLLMRouter.getKeys();
-      const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
-      setVal('free-llm-key-openrouter', keys.openrouter);
-      setVal('free-llm-key-groq', keys.groq);
-      setVal('free-llm-key-cerebras', keys.cerebras);
-      setVal('free-llm-key-mistral', keys.mistral);
-      setVal('free-llm-key-github', keys.github);
-      setVal('free-llm-key-ollama', keys.ollama);
-      window.FreeLLMRouter.discoverOpenRouterFreeModels();
-    }
-  };
-
-  window.closeFreeLLMModal = function() {
+  window.closeFreeLLMModal = function () {
     const modal = document.getElementById('free-llm-modal-backdrop');
     if (modal) modal.style.display = 'none';
   };
 
-  function bindTopBarButton() {
+  window.toggleFreeLLMModal = window.openFreeLLMModal;
+  window.openAiFreeModal = window.openFreeLLMModal;
+
+  const boot = () => {
+    window.FreeLLMRouter.bindTopBarButton();
     window.FreeLLMRouter.populateAllSelects();
-    document.addEventListener('click', (e) => {
-      const btn = e.target && e.target.closest ? e.target.closest('#btn-top-free-llm-v285, [data-open-free-llm]') : null;
-      if (btn) {
-        e.preventDefault();
-        e.stopPropagation();
-        window.openFreeLLMModal();
-      }
-    }, true);
-  }
+    setTimeout(() => window.FreeLLMRouter.discoverOpenRouterFreeModels(), 600);
+  };
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindTopBarButton);
+    document.addEventListener('DOMContentLoaded', boot);
   } else {
-    bindTopBarButton();
+    boot();
   }
 })();
