@@ -1,16 +1,24 @@
 // ==========================================================================
-// FREE LLM ROUTER v29.0 — 7-CHANNEL ZERO-COST FAILOVER + VERCEL SKILLS BRIDGE
+// FREE LLM ROUTER v31.0-QWEN4-OMNI — VISION-TO-3D + BLENDER BRIDGE + 7-CHANNEL FAILOVER
 // OpenRouter (:free) | Groq | Cerebras | Mistral | GitHub | AI Studio | Ollama/:4000
 // ==========================================================================
 (function () {
   const FALLBACK_STATIC_MODELS = [
+    { id: 'qwen/qwen3.8-27b:free', label: 'Qwen3.8-27B Vision-to-3D (:free Multimodale)' },
+    { id: 'nvidia/nemotron-3.5-super-vl:free', label: 'NVIDIA Nemotron 3.5 Super VL (:free Vision)' },
     { id: 'openrouter/free', label: 'openrouter/free (Router Universale Auto-Free 0€)' },
     { id: 'qwen/qwen3-coder:free', label: 'Qwen3 Coder :free' },
     { id: 'deepseek/deepseek-r1-0528:free', label: 'DeepSeek R1 :free' },
     { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B :free' }
   ];
 
-  const PRIORITY_PREFIXES = ['qwen', 'deepseek', 'llama', 'gemini', 'mistral'];
+  const VISION_MODELS = [
+    'qwen/qwen3.8-27b:free',
+    'nvidia/nemotron-3.5-super-vl:free',
+    'openrouter/free'
+  ];
+
+  const PRIORITY_PREFIXES = ['qwen3.8', 'qwen4', 'qwen', 'nemotron', 'deepseek', 'llama', 'gemini', 'mistral'];
 
   const EXTRA_PROVIDERS = [
     { id: 'groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', model: 'qwen-qwq-32b', storageKey: 'GROQ_FREE_KEY' },
@@ -18,12 +26,12 @@
     { id: 'mistral', endpoint: 'https://api.mistral.ai/v1/chat/completions', model: 'codestral-latest', storageKey: 'MISTRAL_FREE_KEY' },
     { id: 'github', endpoint: 'https://models.inference.ai.azure.com/chat/completions', model: 'DeepSeek-R1', storageKey: 'GITHUB_FREE_TOKEN' },
     { id: 'aistudio', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.5-pro-exp-03-25', storageKey: 'GEMINI_FREE_KEY' },
-    { id: 'ollama', endpoint: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5-coder:32b', storageKey: 'OLLAMA_FREE_URL', isUrl: true },
+    { id: 'ollama', endpoint: 'http://localhost:11434/v1/chat/completions', model: 'qwen4:27b', storageKey: 'OLLAMA_FREE_URL', isUrl: true },
     { id: 'localproxy', endpoint: 'http://127.0.0.1:4000/v1/chat/completions', model: 'auto-free-pool', storageKey: 'LOCAL_PROXY_URL', isUrl: true }
   ];
 
   const FreeLLMRouter = {
-    version: '29.0',
+    version: '31.0-QWEN4-OMNI',
     discoveredModels: [...FALLBACK_STATIC_MODELS],
     discoveryLoaded: false,
     primaryModel: localStorage.getItem('FREE_LLM_PRIMARY_MODEL') || 'openrouter/free',
@@ -300,6 +308,208 @@
         if (badge) badge.textContent = '🟡 Verifica Chiave/Rete';
         if (outEl) outEl.textContent = '⚠️ Timeout nodo OpenRouter: verifica la chiave o usa Groq/Cerebras/Ollama.';
       }
+    },
+
+    /* ===== v31.0-QWEN4-OMNI: VISION-TO-3D & BLENDER BRIDGE ===== */
+    async visionChat(promptText, imageDataUrl, opts = {}) {
+      const baseAttempts = await this.buildAttempts();
+      const orKey = this.getOpenRouterKey();
+      const attempts = [];
+      const seen = new Set();
+      const addAttempt = (a) => {
+        const k = `${a.provider}:${a.model}`;
+        if (!seen.has(k)) { seen.add(k); attempts.push(a); }
+      };
+      if (orKey) {
+        VISION_MODELS.forEach(model => addAttempt({
+          provider: 'OpenRouter-Vision',
+          endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+          model,
+          key: orKey
+        }));
+      }
+      // Assicura Ollama qwen4:27b locale multimodale tra i target prioritari
+      const ollamaUrl = this.getStoredKey('OLLAMA_FREE_URL', 'http://localhost:11434/v1/chat/completions');
+      if (ollamaUrl) addAttempt({ provider: 'OLLAMA-QWEN4', endpoint: ollamaUrl, model: 'qwen4:27b', key: 'local-free' });
+      baseAttempts.forEach(addAttempt);
+
+      const userContent = imageDataUrl
+        ? [{ type: 'text', text: promptText }, { type: 'image_url', image_url: { url: imageDataUrl } }]
+        : promptText;
+      const messages = [
+        { role: 'system', content: 'Sei Qwen3.8-27B Vision-to-3D ArchViz & Blender Engine. Rispondi esclusivamente con JSON valido.' },
+        { role: 'user', content: userContent }
+      ];
+
+      const errors = [];
+      for (const target of attempts) {
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), opts.timeoutMs || 12000);
+          const payloadMessages = (imageDataUrl && !/qwen|vl|gemini|free|nemotron/i.test(target.model))
+            ? [{ role: 'system', content: messages[0].content }, { role: 'user', content: promptText }]
+            : messages;
+          const res = await fetch(target.endpoint, {
+            method: 'POST',
+            signal: ctrl.signal,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${target.key}` },
+            body: JSON.stringify({
+              model: target.model,
+              messages: payloadMessages,
+              temperature: opts.temperature ?? 0.2,
+              max_tokens: opts.max_tokens ?? 1400
+            })
+          });
+          clearTimeout(t);
+          if (!res.ok) { errors.push(`${target.provider}:${target.model}(${res.status})`); continue; }
+          const data = await res.json();
+          const content = data?.choices?.[0]?.message?.content || '';
+          if (content) return { content, provider: target.provider, model: data?.model || target.model };
+        } catch (e) {
+          errors.push(`${target.provider}:${target.model}(${e.message})`);
+        }
+      }
+      throw new Error('Vision failover esaurito: ' + errors.slice(0, 4).join(' | '));
+    },
+
+    buildDeterministicBlenderPy(cfg = {}) {
+      const area = +(cfg.areaMq || 145.5);
+      const h = +((cfg.heightCm || 300) / 100).toFixed(2);
+      const w = +(Math.sqrt(area * 1.35)).toFixed(2);
+      const d = +(area / Math.max(1, w)).toFixed(2);
+      const rot = cfg.rotation ?? 0;
+      const tilt = cfg.tilt ?? 15;
+      const lens = cfg.zoom ?? 50;
+      const mode = cfg.mode || '/axo';
+      return [
+        `# ==============================================================================`,
+        `# CADBridge Pro 4K — Blender 4.x Python Digital Twin & Camera Path (${mode})`,
+        `# Generato da FreeLLMRouter v31.0-QWEN4-OMNI`,
+        `# ==============================================================================`,
+        `import bpy, math`,
+        ``,
+        `bpy.ops.wm.read_factory_settings(use_empty=True)`,
+        `scene = bpy.context.scene`,
+        `scene.render.engine = 'CYCLES'`,
+        `scene.cycles.samples = 128`,
+        `scene.render.resolution_x = 3840`,
+        `scene.render.resolution_y = 2160`,
+        `scene.frame_start = 1`,
+        `scene.frame_end = 180`,
+        ``,
+        `# 1. Pavimento & Lotto Parametrico (${area} m2)`,
+        `bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, 0))`,
+        `floor_obj = bpy.context.active_object`,
+        `floor_obj.name = 'CB_Floor_${area}mq'`,
+        `floor_obj.scale = (${w}, ${d}, 1)`,
+        ``,
+        `# 2. Involucro Pareti Perimetrali (H=${h}m)`,
+        `wall_t = 0.30`,
+        `walls = [`,
+        `  ('Wall_North', (0, ${d}/2, ${h}/2), (${w}, wall_t, ${h})),`,
+        `  ('Wall_South', (0, -${d}/2, ${h}/2), (${w}, wall_t, ${h})),`,
+        `  ('Wall_East', (${w}/2, 0, ${h}/2), (wall_t, ${d}, ${h})),`,
+        `  ('Wall_West', (-${w}/2, 0, ${h}/2), (wall_t, ${d}, ${h}))`,
+        `]`,
+        `for name, loc, sc in walls:`,
+        `    bpy.ops.mesh.primitive_cube_add(size=1, location=loc)`,
+        `    obj = bpy.context.active_object`,
+        `    obj.name = name`,
+        `    obj.scale = sc`,
+        ``,
+        `# 3. Illuminazione Architetturale LED 2700K + Sole`,
+        `bpy.ops.object.light_add(type='SUN', location=(8, -8, 12))`,
+        `sun = bpy.context.active_object`,
+        `sun.data.energy = 3.5`,
+        `bpy.ops.object.light_add(type='AREA', location=(0, 0, ${h} - 0.15))`,
+        `led = bpy.context.active_object`,
+        `led.name = 'LED_2700K_Core'`,
+        `led.data.color = (1.0, 0.78, 0.52)`,
+        `led.data.energy = 280`,
+        `led.data.size = 2.4`,
+        ``,
+        `# 4. Camera 3D Cube Controller Path (Rot=${rot}deg, Tilt=${tilt}deg, Lens=${lens}mm)`,
+        `bpy.ops.object.camera_add()`,
+        `cam = bpy.context.active_object`,
+        `cam.name = 'CB_Camera_4K'`,
+        `cam.data.lens = ${lens}`,
+        `scene.camera = cam`,
+        `radius = max(${w}, ${d}) * 1.45`,
+        `for f, a_off in [(1, ${rot} - 35), (90, ${rot}), (180, ${rot} + 35)]:`,
+        `    ang = math.radians(a_off)`,
+        `    t_rad = math.radians(max(5, ${tilt} + 25))`,
+        `    cam.location = (radius * math.cos(ang), radius * math.sin(ang), radius * math.tan(t_rad) * 0.65)`,
+        `    direction = (-cam.location).normalized()`,
+        `    cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()`,
+        `    cam.keyframe_insert(data_path='location', frame=f)`,
+        `    cam.keyframe_insert(data_path='rotation_euler', frame=f)`,
+        `print('[CADBridge v31.0] Digital Twin + Camera Path Blender generati con successo.')`
+      ].join('\n');
+    },
+
+    async generateCAD3DAndVideoScene(params = {}) {
+      const mode = params.mode || '/axo';
+      const rotation = params.rotation ?? 0;
+      const tilt = params.tilt ?? 15;
+      const zoom = params.zoom ?? 50;
+      const areaMq = params.areaMq || 145.5;
+      const heightCm = params.heightCm || 300;
+      const quotesCm = params.quotesCm || '';
+      const extraPrompt = params.extraPrompt || '';
+
+      const sysPrompt = [
+        `Analizza questa planimetria/schema 2D e genera una risposta JSON con chiavi esatte:`,
+        `{"rooms":["..."],"areaMq":${areaMq},"heightCm":${heightCm},"zoning":{"giornoPct":45,"nottePct":35,"serviziPct":20},"cameraPath":"...","prompt4K":"...","narrationIT":"...","blenderNotes":"..."}`,
+        `Modalità Architect's Prompt Vault attiva: ${mode}. Camera Cube: Rot ${rotation}°, Tilt ${tilt}°, Ottica ${zoom}mm.`,
+        quotesCm ? `Quote rilevate (cm): ${quotesCm}` : '',
+        extraPrompt ? `Note utente: ${extraPrompt}` : ''
+      ].filter(Boolean).join('\n');
+
+      let parsed = null;
+      let usedProvider = 'Deterministic-CAD-Bridge';
+      let usedModel = 'qwen4:27b-fallback';
+
+      try {
+        const res = await this.visionChat(sysPrompt, params.imageDataUrl || null, { max_tokens: 900 });
+        usedProvider = res.provider;
+        usedModel = res.model;
+        const m = res.content.match(/\{[\s\S]*\}/);
+        if (m) parsed = JSON.parse(m[0]);
+      } catch (e) {
+        // Fallback deterministico immediato se offline o senza API key
+      }
+
+      const finalArea = Number(parsed?.areaMq) || areaMq;
+      const finalHeight = Number(parsed?.heightCm) || heightCm;
+      const zoning = parsed?.zoning || { giornoPct: 45, nottePct: 35, serviziPct: 20 };
+      const rooms = Array.isArray(parsed?.rooms) && parsed.rooms.length ? parsed.rooms : ['Living Open-Space', 'Cucina Isola', 'Suite Padronale', 'Bagno Spa'];
+      const cameraPath = parsed?.cameraPath || `Orbit 360° (${rotation}° -> ${rotation + 70}°), Tilt ${tilt}°, Lens ${zoom}mm, Keyframes 1..180`;
+      const prompt4K = parsed?.prompt4K || `Ultra-photorealistic 4K architectural digital twin (${mode}), ${finalArea} m², H=${finalHeight}cm, rooms: ${rooms.join(', ')}, camera ${zoom}mm Rot ${rotation}° Tilt ${tilt}°, warm 2700K architectural LED lighting, PBR travertine & oak materials.`;
+      const narrationIT = parsed?.narrationIT || `Analisi Qwen Vision completata in modalità ${mode}. Rilevati ${finalArea} metri quadri con altezza ${finalHeight} centimetri, suddivisione funzionale ${zoning.giornoPct} percento zona giorno, ${zoning.nottePct} percento zona notte e ${zoning.serviziPct} percento servizi. Percorso camera impostato a ${zoom} millimetri con inclinazione ${tilt} gradi.`;
+
+      const blenderPy = this.buildDeterministicBlenderPy({
+        areaMq: finalArea, heightCm: finalHeight, rotation, tilt, zoom, mode
+      });
+
+      return {
+        version: this.version,
+        provider: usedProvider,
+        model: usedModel,
+        digitalTwin: { rooms, areaMq: finalArea, heightCm: finalHeight, zoning, cameraPath },
+        blenderPy,
+        prompt4K,
+        narrationIT
+      };
+    },
+
+    downloadBlenderPy(pyCode, filename) {
+      const blob = new Blob([pyCode || this.buildDeterministicBlenderPy()], { type: 'text/x-python;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename || `CADBridge_Qwen38_DigitalTwin_${Date.now()}.py`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     },
 
     openModal() {

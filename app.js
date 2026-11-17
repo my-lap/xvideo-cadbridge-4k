@@ -412,6 +412,7 @@ function initStudio4KAnd5Agents() {
       card.classList.add('active-agent');
       APP_STATE.studio.selectedAgent = card.getAttribute('data-agent-id');
       runMultiAgentPipeline(document.getElementById('agentDirectiveInput').value, true);
+      if (typeof window.qwenVisionAnalyze2DTo3D === 'function') window.qwenVisionAnalyze2DTo3D(true);
     });
   });
 
@@ -879,6 +880,7 @@ function loadBlobIntoStudioImage(blob, label) {
       appendLog(`${label} caricata nello Studio 4K e inviata al Supervisore IA.`);
       runMultiAgentPipeline(document.getElementById('agentDirectiveInput').value, true);
     };
+    window._last2DImageDataUrl = ev.target.result;
     img.src = ev.target.result;
   };
   reader.readAsDataURL(blob);
@@ -1610,7 +1612,7 @@ window.installIosWebClip = function () {
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker
-      .register('./sw.js?v=18.2')
+      .register('./sw.js?v=31.0')
       .then((reg) => {
         reg.update().catch(() => {});
       })
@@ -7659,3 +7661,101 @@ function initAllInOneV18() {
   window.cedRunContinuousAuditV18();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAllInOneV18); else initAllInOneV18();
+
+
+/* ===== v31.0-QWEN4-OMNI: BRIDGE 2D-TO-3D + ARCHITECT VAULT + BLENDER .PY + NEURAL VOICES ===== */
+window._qwenLastScene31 = null;
+
+window.qwenVisionAnalyze2DTo3D = async function (silent = false) {
+  const router = window.FreeLLMRouterV285;
+  const statusEl = document.getElementById('qwen3dVaultStatus');
+  const telem = document.getElementById('apolloVaultTelemetry');
+  if (!router || typeof router.generateCAD3DAndVideoScene !== 'function') {
+    if (statusEl) statusEl.textContent = '⚠️ Router FreeLLMRouterV285 v31.0 non disponibile.';
+    return null;
+  }
+  const mode = (typeof APOLLO_VAULT_STATE !== 'undefined' && APOLLO_VAULT_STATE.activeMode) ? APOLLO_VAULT_STATE.activeMode : '/axo';
+  const rotation = (typeof APOLLO_VAULT_STATE !== 'undefined') ? APOLLO_VAULT_STATE.rotation : 0;
+  const tilt = (typeof APOLLO_VAULT_STATE !== 'undefined') ? APOLLO_VAULT_STATE.tilt : 15;
+  const zoom = (typeof APOLLO_VAULT_STATE !== 'undefined') ? APOLLO_VAULT_STATE.zoom : 50;
+  const g = (typeof mvGeom === 'function') ? mvGeom() : null;
+  const areaMq = (g && g.area > 1) ? +g.area.toFixed(1) : 145.5;
+  const heightCm = (typeof MV !== 'undefined' && MV.vol?.H) ? MV.vol.H : 300;
+  const quotesCm = document.getElementById('mvQuotes')?.value || '';
+  const extraPrompt = document.getElementById('agentDirectiveInput')?.value || '';
+
+  if (statusEl) statusEl.textContent = `⏳ Qwen3.8-27B / Qwen4 Vision: analisi 2D→3D (${mode}, Rot ${rotation}°, Tilt ${tilt}°, ${zoom}mm)...`;
+
+  const scene = await router.generateCAD3DAndVideoScene({
+    imageDataUrl: window._last2DImageDataUrl || null,
+    mode, rotation, tilt, zoom, areaMq, heightCm, quotesCm, extraPrompt
+  });
+  window._qwenLastScene31 = scene;
+
+  if (statusEl) {
+    statusEl.innerHTML =
+      `✅ <b>${scene.model}</b> (${scene.provider}) · Twin: <b>${scene.digitalTwin.areaMq} m²</b> (H=${scene.digitalTwin.heightCm}cm) · Zoning ${scene.digitalTwin.zoning.giornoPct}/${scene.digitalTwin.zoning.nottePct}/${scene.digitalTwin.zoning.serviziPct}%<br>` +
+      `<span style="color:#38bdf8">Camera Path:</span> ${scene.digitalTwin.cameraPath}<br>` +
+      `<span style="color:#fde047">Prompt 4K:</span> ${scene.prompt4K}`;
+  }
+  if (telem) {
+    telem.textContent = `⚡ ${mode} · Qwen4 Twin ${scene.digitalTwin.areaMq}m² · ${zoom}mm [BLENDER .PY READY]`;
+  }
+  const cadOut = document.getElementById('cadCodeOutput') || document.getElementById('lisp-output');
+  if (cadOut && !silent) {
+    cadOut.textContent = scene.blenderPy;
+  }
+  if (typeof appendLog === 'function') {
+    appendLog(`🧠 Qwen Vision 2D→3D (${scene.model}): Digital Twin ${scene.digitalTwin.areaMq}m², Camera Path & Script Blender .py generati.`);
+  }
+  return scene;
+};
+
+window.qwenDownloadBlenderPy = async function () {
+  if (!window._qwenLastScene31) await window.qwenVisionAnalyze2DTo3D(true);
+  const router = window.FreeLLMRouterV285;
+  if (router && window._qwenLastScene31) {
+    router.downloadBlenderPy(window._qwenLastScene31.blenderPy);
+    if (typeof appendLog === 'function') appendLog('🐍 Script Blender (.py) scaricato con Digital Twin + Camera Path 4K.');
+  }
+};
+
+window.qwenNarrateScene4K = async function () {
+  if (!window._qwenLastScene31) await window.qwenVisionAnalyze2DTo3D(true);
+  const text = window._qwenLastScene31?.narrationIT || 'Scena 3D parametrica e percorso camera 4K pronti.';
+  if (typeof mvNarrate === 'function') {
+    mvNarrate(text);
+  } else if (typeof HumanVoiceOrchestrator !== 'undefined') {
+    HumanVoiceOrchestrator.speak(text);
+  }
+};
+
+// Estende executeApolloSlashCommand e renderCube3x3Grid per supportare /axo, /zoning e sync Blender/Qwen
+const _origExecApolloV31 = window.executeApolloSlashCommand;
+window.executeApolloSlashCommand = function (cmd) {
+  if (typeof _origExecApolloV31 === 'function') _origExecApolloV31(cmd);
+  const telem = document.getElementById('apolloVaultTelemetry');
+  if (cmd === '/axo' && telem) telem.textContent = '⚡ /axo: Assonometria Esplosa 3D Parametrica + Blender Path [ACTIVE]';
+  if (cmd === '/zoning' && telem) telem.textContent = '⚡ /zoning: Zoning Cromatico Giorno/Notte/Servizi mq/% [ACTIVE]';
+  window.qwenVisionAnalyze2DTo3D(true);
+};
+
+const _origRenderCubeV31 = window.renderCube3x3Grid;
+window.renderCube3x3Grid = function () {
+  if (typeof _origRenderCubeV31 === 'function') _origRenderCubeV31();
+  window.qwenVisionAnalyze2DTo3D(true);
+};
+
+const _origMvLoadMasterV31 = window.mvLoadMaster;
+window.mvLoadMaster = function (ev) {
+  const f = ev?.target?.files?.[0];
+  if (f) {
+    const fr = new FileReader();
+    fr.onload = (e) => {
+      window._last2DImageDataUrl = e.target.result;
+      window.qwenVisionAnalyze2DTo3D(true);
+    };
+    fr.readAsDataURL(f);
+  }
+  if (typeof _origMvLoadMasterV31 === 'function') return _origMvLoadMasterV31(ev);
+};

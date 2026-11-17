@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="XviDeo AI 4K" />
   <link rel="manifest" href="manifest.json?v=3.0" />
-  <link rel="stylesheet" href="styles.css?v=28.9" />
+  <link rel="stylesheet" href="styles.css?v=31.0" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -880,6 +880,15 @@
                   <button type="button" class="btn btn-cyan" onclick="renderCube3x3Grid()" style="width:100%;font-size:10px;padding:6px 6px;white-space:nowrap;">🎲 Genera 3x3 Coerente</button>
                 </div>
               </div>
+              <div class="mvr" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;" id="qwen3dVaultControls">
+                <button type="button" class="btn btn-cyan" onclick="qwenVisionAnalyze2DTo3D()" style="font-size:11px;">🧠 Qwen4 Vision 2D→3D + Blender</button>
+                <button type="button" class="btn" onclick="executeApolloSlashCommand('/axo')" style="font-size:11px;">📐 /axo</button>
+                <button type="button" class="btn" onclick="executeApolloSlashCommand('/zoning')" style="font-size:11px;">🎨 /zoning</button>
+                <button type="button" class="btn" onclick="qwenDownloadBlenderPy()" style="font-size:11px;">🐍 Scarica Blender .PY</button>
+                <button type="button" class="btn" onclick="qwenNarrateScene4K()" style="font-size:11px;">🎙️ Narra Scena 4K</button>
+              </div>
+              <div id="qwen3dVaultStatus" style="margin-top:5px;padding:6px 8px;border-radius:6px;background:rgba(2,6,23,0.75);border:1px solid rgba(56,189,248,0.3);font-size:11px;color:#cbd5e1;font-family:var(--font-mono);">🧠 Qwen3.8-27B / Qwen4 Vision pronto: carica una planimetria 2D o usa /axo, /board, /zoning, 3D Camera Cube.</div>
+
             </div>
 
             <!-- ANELLO 2: LUXURY 4K RENDER ENGINE (13 ARCHETIPI 2D->3D — VIDEO 3 @renderdilusso) -->
@@ -2327,9 +2336,9 @@
     window.addEventListener('orientationchange', updateIosSafeMode);
     updateIosSafeMode();
   </script>
-  <script src="js/free_llm_router.js?v=28.9"></script>
-  <script src="js/vercel_skills_bridge.js?v=28.9"></script>
-  <script src="app.js?v=28.9"></script>
+  <script src="js/free_llm_router.js?v=31.0"></script>
+  <script src="js/vercel_skills_bridge.js?v=31.0"></script>
+  <script src="app.js?v=31.0"></script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(reg=>reg.update()));}</script>
 </body>
 </html>
