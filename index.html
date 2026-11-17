@@ -196,7 +196,7 @@
       <button id="installPwaBtn" class="btn btn-cyan" style="display:none;padding:6px 9px;font-size:0.72rem;width:auto;">
         📥 App
       </button>
-      <button id="btn-top-free-llm-v285" type="button" onclick="window.openFreeLLMModal && window.openFreeLLMModal()" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;background:rgba(0,242,161,0.16);border:1px solid #00f2a1;color:#00f2a1;font-weight:800;" title="Motore AI Free 0€ (Qwen4 / DeepSeek / Nemotron)">
+      <button id="btn-top-free-llm-v285" type="button" onclick="window.openFreeLLMModal()" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;background:rgba(0,242,161,0.16);border:1px solid #00f2a1;color:#00f2a1;font-weight:800;" title="Motore AI Free 0€ (Qwen4 / DeepSeek / Nemotron)">
         🧠 ⚡ AI Free (Qwen/DeepSeek)
       </button>
       <button id="openLicenseModalBtn" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;" title="Licenza Gumroad / Modalità">
@@ -882,7 +882,7 @@
                 </div>
               </div>
               <div class="mvr" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;" id="qwen3dVaultControls">
-                <select id="qro-inline-model-select" class="free-llm-synced-select" style="min-width:210px;font-size:11px;" aria-label="Modello AI Free 0€"></select>
+                <select id="qro-inline-model-select" class="free-llm-synced-select" onchange="window.FreeLLMRouter && window.FreeLLMRouter.setPrimaryModel(this.value)" style="min-width:210px;font-size:11px;" aria-label="Modello AI Free 0€"></select>
                 <button type="button" class="btn btn-cyan" onclick="qwenVisionAnalyze2DTo3D()" style="font-size:11px;">🧠 Qwen4 Vision 2D→3D + Blender</button>
                 <button type="button" class="btn" onclick="executeApolloSlashCommand('/axo')" style="font-size:11px;">📐 /axo</button>
                 <button type="button" class="btn" onclick="executeApolloSlashCommand('/zoning')" style="font-size:11px;">🎨 /zoning</button>
