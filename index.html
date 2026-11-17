@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="XviDeo AI 4K" />
-  <link rel="manifest" href="manifest.json?v=3.0" />
-  <link rel="stylesheet" href="styles.css?v=31.0" />
+  <link rel="manifest" href="manifest.json?v=31.3-dual-sync" />
+  <link rel="stylesheet" href="styles.css?v=31.3-dual-sync" />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -196,8 +196,8 @@
       <button id="installPwaBtn" class="btn btn-cyan" style="display:none;padding:6px 9px;font-size:0.72rem;width:auto;">
         📥 App
       </button>
-      <button id="btn-top-free-llm-v285" type="button" onclick="window.FreeLLMRouterV285 && window.FreeLLMRouterV285.openModal()" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;background:rgba(0,242,161,0.16);border:1px solid #00f2a1;color:#00f2a1;font-weight:800;" title="Motore AI Free 0€ (OpenRouter :free Auto-Discovery)">
-        🧠⚡ AI Free
+      <button id="btn-top-free-llm-v285" type="button" onclick="window.openFreeLLMModal && window.openFreeLLMModal()" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;background:rgba(0,242,161,0.16);border:1px solid #00f2a1;color:#00f2a1;font-weight:800;" title="Motore AI Free 0€ (Qwen4 / DeepSeek / Nemotron)">
+        🧠 ⚡ AI Free (Qwen/DeepSeek)
       </button>
       <button id="openLicenseModalBtn" class="btn" style="padding:6px 9px;font-size:0.72rem;width:auto;" title="Licenza Gumroad / Modalità">
         🔑
@@ -881,6 +881,7 @@
                 </div>
               </div>
               <div class="mvr" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;" id="qwen3dVaultControls">
+                <select id="qro-inline-model-select" class="free-llm-synced-select" style="min-width:210px;font-size:11px;" aria-label="Modello AI Free 0€"></select>
                 <button type="button" class="btn btn-cyan" onclick="qwenVisionAnalyze2DTo3D()" style="font-size:11px;">🧠 Qwen4 Vision 2D→3D + Blender</button>
                 <button type="button" class="btn" onclick="executeApolloSlashCommand('/axo')" style="font-size:11px;">📐 /axo</button>
                 <button type="button" class="btn" onclick="executeApolloSlashCommand('/zoning')" style="font-size:11px;">🎨 /zoning</button>
@@ -2336,9 +2337,9 @@
     window.addEventListener('orientationchange', updateIosSafeMode);
     updateIosSafeMode();
   </script>
-  <script src="js/free_llm_router.js?v=31.0"></script>
-  <script src="js/vercel_skills_bridge.js?v=31.0"></script>
-  <script src="app.js?v=31.0"></script>
+  <script src="js/free_llm_router.js?v=31.3-dual-sync"></script>
+  <script src="js/vercel_skills_bridge.js?v=31.3-dual-sync"></script>
+  <script src="app.js?v=31.3-dual-sync"></script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(reg=>reg.update()));}</script>
 </body>
 </html>

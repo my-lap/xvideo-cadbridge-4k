@@ -1,15 +1,18 @@
 // ==========================================================================
-// FREE LLM ROUTER v31.0-QWEN4-OMNI — VISION-TO-3D + BLENDER BRIDGE + 7-CHANNEL FAILOVER
+// FREE LLM ROUTER v31.3-DUAL-SYNC — QWEN4 + DEEPSEEK + NEMOTRON + GEMMA4 + BLENDER BRIDGE
 // OpenRouter (:free) | Groq | Cerebras | Mistral | GitHub | AI Studio | Ollama/:4000
 // ==========================================================================
 (function () {
   const FALLBACK_STATIC_MODELS = [
-    { id: 'qwen/qwen3.8-27b:free', label: 'Qwen3.8-27B Vision-to-3D (:free Multimodale)' },
-    { id: 'nvidia/nemotron-3.5-super-vl:free', label: 'NVIDIA Nemotron 3.5 Super VL (:free Vision)' },
+    { id: 'qwen/qwen3.8-27b:free', label: 'Qwen 3.8/4 27B Vision+Code (:free 0€)' },
+    { id: 'deepseek/deepseek-r1-0528:free', label: 'DeepSeek-R1 (:free Live 0€)' },
+    { id: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek-V3-0324 (:free Live 0€)' },
+    { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', label: 'Nemotron 3 Ultra 550B (:free 0€)' },
+    { id: 'nvidia/nemotron-3.5-super-vl:free', label: 'Nemotron 3.5 Super VL (:free Vision 0€)' },
+    { id: 'google/gemma-4-31b-it:free', label: 'Gemma 4 31B (:free Live 0€)' },
     { id: 'openrouter/free', label: 'openrouter/free (Router Universale Auto-Free 0€)' },
-    { id: 'qwen/qwen3-coder:free', label: 'Qwen3 Coder :free' },
-    { id: 'deepseek/deepseek-r1-0528:free', label: 'DeepSeek R1 :free' },
-    { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B :free' }
+    { id: 'qwen/qwen3-coder:free', label: 'Qwen3 Coder (:free 0€)' },
+    { id: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B (:free 0€)' }
   ];
 
   const VISION_MODELS = [
@@ -31,7 +34,7 @@
   ];
 
   const FreeLLMRouter = {
-    version: '31.0-QWEN4-OMNI',
+    version: '31.3-DUAL-SYNC',
     discoveredModels: [...FALLBACK_STATIC_MODELS],
     discoveryLoaded: false,
     primaryModel: localStorage.getItem('FREE_LLM_PRIMARY_MODEL') || 'openrouter/free',
@@ -72,10 +75,15 @@
         })
         .slice(0, 40)
         .map(m => ({ id: m.id, label: `${m.name || m.id} (${m.id})` }));
-      return [
-        { id: 'openrouter/free', label: 'openrouter/free (Router Universale Auto-Free 0€)' },
-        ...freeOnes.filter(m => m.id !== 'openrouter/free')
-      ];
+      const merged = [...FALLBACK_STATIC_MODELS];
+      const seen = new Set(merged.map(m => m.id));
+      freeOnes.forEach(m => {
+        if (!seen.has(m.id)) {
+          seen.add(m.id);
+          merged.push({ id: m.id, label: `${m.label.replace(/\s*\([^)]*\)$/, '')} (:free Live 0€)` });
+        }
+      });
+      return merged;
     },
 
     async discoverFreeModels(force = false) {
@@ -98,16 +106,36 @@
     },
 
     populateModelSelectDOM() {
-      const sel = document.getElementById('free-llm-model-select');
-      if (!sel) return;
-      const current = this.primaryModel || 'openrouter/free';
-      sel.innerHTML = this.discoveredModels.map(m =>
+      const selects = [];
+      const modalSel = document.getElementById('free-llm-model-select');
+      if (modalSel) selects.push(modalSel);
+      document.querySelectorAll('.free-llm-synced-select').forEach(el => {
+        if (!selects.includes(el)) selects.push(el);
+      });
+      if (!selects.length) return;
+      let current = this.primaryModel || localStorage.getItem('FREE_LLM_PRIMARY_MODEL') || 'qwen/qwen3.8-27b:free';
+      if (!this.discoveredModels.some(m => m.id === current)) {
+        current = 'openrouter/free';
+        this.primaryModel = current;
+      }
+      const optionsHtml = this.discoveredModels.map(m =>
         `<option value="${m.id}" ${m.id === current ? 'selected' : ''}>${m.label}</option>`
       ).join('');
-      if (!this.discoveredModels.some(m => m.id === current)) {
-        sel.value = 'openrouter/free';
-        this.primaryModel = 'openrouter/free';
-      }
+      selects.forEach(sel => {
+        sel.innerHTML = optionsHtml;
+        sel.value = current;
+        if (!sel.dataset.dualSyncBound) {
+          sel.dataset.dualSyncBound = '1';
+          sel.addEventListener('change', (e) => {
+            const nextVal = e.target.value;
+            this.primaryModel = nextVal;
+            try { localStorage.setItem('FREE_LLM_PRIMARY_MODEL', nextVal); } catch (err) {}
+            selects.forEach(other => { if (other !== e.target) other.value = nextVal; });
+            const badge = document.getElementById('v285-status-badge');
+            if (badge) badge.textContent = `🟢 0,00€ ${nextVal}`;
+          });
+        }
+      });
     },
 
     saveSettings() {
@@ -588,8 +616,17 @@
     }
   };
 
+  window.FreeLLMRouter = FreeLLMRouter;
   window.FreeLLMRouterV285 = FreeLLMRouter;
   window.AntigravityInfiniteFreeRouterV28 = FreeLLMRouter;
+  window.openFreeLLMModal = () => FreeLLMRouter.openModal();
   window.saveInstantOpenRouterKey = () => FreeLLMRouter.saveSettings();
   window.runInstantOpenRouterTest = () => FreeLLMRouter.runInstantTest();
+
+  const initDualSync = () => {
+    FreeLLMRouter.populateModelSelectDOM();
+    FreeLLMRouter.discoverFreeModels(false);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDualSync);
+  else initDualSync();
 })();

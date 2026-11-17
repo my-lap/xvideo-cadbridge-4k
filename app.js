@@ -1612,7 +1612,7 @@ window.installIosWebClip = function () {
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker
-      .register('./sw.js?v=31.0')
+      .register('./sw.js?v=31.3-dual-sync')
       .then((reg) => {
         reg.update().catch(() => {});
       })
