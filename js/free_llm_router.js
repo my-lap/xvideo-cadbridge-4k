@@ -138,7 +138,15 @@
             <button type="button" id="free-llm-btn-save" style="flex:1; background:#065f46; color:#fff; border:1px solid #00e676; padding:9px 12px; border-radius:6px; cursor:pointer; font-weight:800; font-size:12px;">💾 Salva Chiavi & Modello</button>
             <button type="button" id="free-llm-btn-test" style="flex:1; background:#006064; color:#fff; border:1px solid #00e5ff; padding:9px 12px; border-radius:6px; cursor:pointer; font-weight:800; font-size:12px;">⚡ Test Ping Live (0,00€)</button>
           </div>
-          <div id="free-llm-status-box" style="background:#050911; border:1px solid rgba(0,229,255,0.3); border-radius:6px; padding:10px 12px; font-size:11.5px; color:#38bdf8; line-height:1.45;">
+          <div style="margin-bottom:12px; padding:10px 12px; background:#050911; border:1px solid rgba(255,213,79,0.35); border-radius:8px;">
+            <div style="font-size:11.5px; color:#ffd54f; font-weight:800; margin-bottom:6px;">📸 SCREENSHOT / IMMAGINE TO CODE (8 AGENTI + QWEN 3.8 27B / NEMOTRON 3.5 VL — 0,00€)</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+              <input type="file" id="free-llm-visual-file" accept="image/*" style="font-size:11px; color:#cbd5e1; max-width:210px;" />
+              <input type="text" id="free-llm-visual-prompt" placeholder="Istruzione (es: Clona layout HTML/CSS/JS o analizza UI)..." style="${inStyle} flex:1; min-width:170px; margin-top:0;" />
+              <button type="button" id="free-llm-btn-clone-ui" style="background:#4c1d95; color:#fde047; border:1px solid #c084fc; padding:7px 11px; border-radius:6px; cursor:pointer; font-weight:800; font-size:11.5px;">🧬 Clona / Analizza UI (0€)</button>
+            </div>
+          </div>
+          <div id="free-llm-status-box" style="background:#050911; border:1px solid rgba(0,229,255,0.3); border-radius:6px; padding:10px 12px; font-size:11.5px; color:#38bdf8; line-height:1.45; white-space:pre-wrap; max-height:220px; overflow-y:auto;">
             🟢 Connesso. Tutti i piani Free compaiono sia qui che nel selettore rapido in fondo alla pagina.
           </div>
         </div>
@@ -151,6 +159,7 @@
       document.getElementById('free-llm-btn-save').addEventListener('click', () => this.saveKeysFromModal());
       document.getElementById('free-llm-btn-test').addEventListener('click', () => window.runInstantOpenRouterTest());
       document.getElementById('free-llm-model-select').addEventListener('change', (e) => this.setPrimaryModel(e.target.value));
+      document.getElementById('free-llm-btn-clone-ui').addEventListener('click', () => this.runVisualClonerFromModal());
 
       this.populateAllSelects();
       return backdrop;
@@ -375,6 +384,37 @@
       3) Il prompt cinematografico 4K con timecode per XviDeo AI Studio.`;
       const prompt = `Ricostruisci la scena 3D e il piano di regia 4K da queste specifiche: ${JSON.stringify(cadSpecs)}`;
       return await this.complete(prompt, sys, { imageDataUrl: floorplanDataUrl, maxTokens: 450 });
+    },
+
+    async cloneUIFromScreenshot(imageDataUrl, customPrompt = '') {
+      const sys = `Sei la squadra di 8 Agenti Screenshot/Video-to-Code guidata da Qwen 3.8 27B Vision & Nemotron 3.5 Super VL.
+      Estrai: 1) Layout, spacing, font e palette colori HEX; 2) Codice HTML5/CSS3/JS pulito e pronto all'uso per clonare o migliorare il componente mostrato.`;
+      const prompt = customPrompt || 'Analizza questo screenshot e genera la specifica UI (layout, colori, font) e il codice HTML/CSS/JS modulare.';
+      return await this.complete(prompt, sys, { imageDataUrl, maxTokens: 600 });
+    },
+
+    async runVisualClonerFromModal() {
+      this.saveKeysFromModal();
+      const fileIn = document.getElementById('free-llm-visual-file');
+      const promptIn = document.getElementById('free-llm-visual-prompt');
+      const customPrompt = (promptIn?.value || '').trim();
+      const file = fileIn?.files?.[0];
+      let dataUrl = window._last2DImageDataUrl || null;
+      if (file) {
+        dataUrl = await new Promise((resolve) => {
+          const fr = new FileReader();
+          fr.onload = (e) => resolve(e.target.result);
+          fr.readAsDataURL(file);
+        });
+      }
+      this.setStatusBox('⏳ Cloner UI Vision (Qwen 3.8 27B / Nemotron 3.5 Super VL — 0,00€) in elaborazione...');
+      const res = await this.cloneUIFromScreenshot(dataUrl, customPrompt);
+      if (res.ok) {
+        this.setStatusBox(`🧬 <b>[${res.model} — Visual Cloner 0,00€]</b>:\n${res.reply}`);
+      } else {
+        this.setStatusBox(`⚠️ ${res.error}`);
+      }
+      return res;
     }
   };
 
