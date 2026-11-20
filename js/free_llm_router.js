@@ -184,11 +184,15 @@
       }
     },
 
-    async complete(promptText, systemPrompt = 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.', imageDataUrl = null) {
+    async complete(promptText, systemPrompt = 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.', imageDataUrl = null, opts = {}) {
       if (systemPrompt && typeof systemPrompt === 'object') {
-        imageDataUrl = systemPrompt.imageDataUrl || imageDataUrl;
-        systemPrompt = systemPrompt.systemPrompt || 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.';
+        opts = systemPrompt;
+        imageDataUrl = opts.imageDataUrl || imageDataUrl;
+        systemPrompt = opts.systemPrompt || 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.';
       }
+      const useStream = !!(opts && opts.stream);
+      const onToken = (opts && typeof opts.onToken === 'function') ? opts.onToken : null;
+      const timeoutMs = (opts && opts.timeoutMs) || (useStream ? 8000 : 3800);
       const keys = this.saveKeysFromModal();
       const candidates = [];
 
@@ -275,6 +279,7 @@
         try {
           const isVisionCapable = node.model.includes('qwen3.8') || node.model.includes('-vl') || node.model.includes('qwen4') || node.model === 'openrouter/free';
           const msgContent = (imageDataUrl && isVisionCapable) ? userContent : promptText;
+          const canStream = useStream && (node.url.includes('openrouter.ai') || node.url.includes('groq.com'));
           const res = await this.callWithTimeout(node.url, {
             method: 'POST',
             headers: node.headers,
@@ -284,17 +289,48 @@
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: msgContent }
               ],
-              max_tokens: 240
+              max_tokens: 240,
+              stream: canStream
             })
-          }, 3800);
+          }, timeoutMs);
 
           if (res.ok) {
-            const json = await res.json();
-            const reply = json.choices?.[0]?.message?.content || 'OK 0,00€';
-            const usedModel = json.model || node.model;
+            let reply = '';
+            let usedModel = node.model;
+            if (canStream && res.body && typeof res.body.getReader === 'function') {
+              const reader = res.body.getReader();
+              const dec = new TextDecoder('utf-8');
+              let buf = '';
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += dec.decode(value, { stream: true });
+                const lines = buf.split('\n');
+                buf = lines.pop() || '';
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (!trimmed.startsWith('data:')) continue;
+                  const payload = trimmed.slice(5).trim();
+                  if (payload === '[DONE]') continue;
+                  try {
+                    const chunk = JSON.parse(payload);
+                    if (chunk.model) usedModel = chunk.model;
+                    const delta = chunk.choices?.[0]?.delta?.content || '';
+                    if (delta) {
+                      reply += delta;
+                      if (onToken) onToken(delta, reply);
+                    }
+                  } catch (e) {}
+                }
+              }
+            } else {
+              const json = await res.json();
+              reply = json.choices?.[0]?.message?.content || 'OK 0,00€';
+              usedModel = json.model || node.model;
+            }
             this.lastActiveNode = usedModel;
             this.updateStatusBadge(`🟢 0,00€ Connesso (${usedModel})`, true);
-            return { ok: true, model: usedModel, reply };
+            return { ok: true, model: usedModel, reply: reply || 'OK 0,00€', streamed: canStream };
           } else {
             errors.push(`${node.name}(${res.status})`);
           }

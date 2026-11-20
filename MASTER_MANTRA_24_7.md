@@ -24,3 +24,8 @@
   - Storyboard cinetico `hyperframes`
   - Musica sincronizzata al ritmo delle scene
   - Copy social pronto per il post tramite `brag` / `letsbrag.app` e `FreeLLMRouter v31.3-DUAL-SYNC`.
+
+## 5. Protocollo Permanente: Hyper-Speed 31 Engine (`guide.infe.dev/app-veloce.html`)
+- **CED 1 — Frontend 60FPS (11 regole)**: Code-splitting & `defer`, CSS critico inline, immagini WebP/AVIF + `loading="lazy"`, zero layout shift (`CLS=0`), `contain: layout paint`, Canvas `{ alpha: false }`, `IntersectionObserver` fuori schermo, `requestAnimationFrame` throttling, virtualizzazione liste lunghe, fast-tap `touch-action: manipulation`, Web Workers per calcoli pesanti.
+- **CED 2 — Backend / DB / Cache / Job Queue (10 regole)**: Indici mirati & zero N+1 query, paginazione keyset, pooling connessioni, cache multi-livello (RAM/Redis/Edge), SWR (`stale-while-revalidate`), compressione Brotli/Gzip, job queue asincrone per task pesanti, circuit breaker & backoff esponenziale, payload JSON minimali, pre-calcolo aggregati.
+- **CED 3 — Network / AI Token-Streaming / OpenTelemetry / RUM (10 regole)**: HTTP/2-3 & keep-alive, CDN edge caching + SW cache-bust controllato, preconnect/dns-prefetch, timeout rigorosi (`AbortController`) + retry anti-429, **AI Token-Streaming (`stream: true` SSE)** su OpenRouter/Groq per TTFT < 400ms, failover multi-provider 0,00€, OpenTelemetry tracing, Real User Monitoring (LCP/INP/CLS), budget prestazioni CI, Zero-Regression Watchdog.
