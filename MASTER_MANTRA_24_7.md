@@ -1,4 +1,5 @@
-# MASTER MANTRA 24/7 — ARCHITETTURA OPERATIVA PERMANENTE
+# MASTER MANTRA 24/7 — ARCHITETTURA OPERATIVA PERMANENTE DEFINITIVA (`v31.4-HYPERSPEED`)
+> Regola permanente 24/24 unificata: **1 CEO Autonomo + 3 CED + 8 Agenti Specializzati + Visual Cloner + Brag Launch Video 20s + Hyper-Speed 31**.
 
 ## 1. Vertice: 1 CEO Autonomo
 - Coordina priorità, allocazione Zero-Waste Token, controllo qualità finale e rilascio continuo su `origin/main` senza regressioni.
