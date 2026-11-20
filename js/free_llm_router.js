@@ -171,17 +171,29 @@
       });
     },
 
-    async callWithTimeout(url, options, timeoutMs = 3800) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
-        clearTimeout(timer);
-        return response;
-      } catch (err) {
-        clearTimeout(timer);
-        throw err;
+    async callWithTimeout(url, options, timeoutMs = 3800, retries = 1) {
+      let lastErr = null;
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch(url, { ...options, signal: controller.signal });
+          clearTimeout(timer);
+          if ((response.status === 429 || response.status >= 502) && attempt < retries) {
+            await new Promise(r => setTimeout(r, 120 * (attempt + 1)));
+            continue;
+          }
+          return response;
+        } catch (err) {
+          clearTimeout(timer);
+          lastErr = err;
+          if (attempt < retries) {
+            await new Promise(r => setTimeout(r, 120 * (attempt + 1)));
+            continue;
+          }
+        }
       }
+      throw lastErr || new Error('Request timeout');
     },
 
     async complete(promptText, systemPrompt = 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.', imageDataUrl = null, opts = {}) {
