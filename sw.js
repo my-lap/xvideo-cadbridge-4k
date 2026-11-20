@@ -5,6 +5,7 @@ const ASSETS = [
   './styles.css',
   './app.js',
   './js/free_llm_router.js',
+  './js/cad_hyperspeed_worker.js',
   './js/cad_ai_3d_bridge.js',
   './js/vercel_skills_bridge.js',
   './manifest.json'

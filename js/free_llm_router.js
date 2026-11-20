@@ -44,9 +44,11 @@
   ];
 
   window.FreeLLMRouter = {
-    version: '31.3-DUAL-SYNC',
+    version: '31.4-HYPERSPEED',
     discoveredFreeModels: [...DEFAULT_MODELS],
     lastActiveNode: null,
+    _discoverInFlight: null,
+    rum: { requests: 0, streamed: 0, lastTotalMs: 0 },
     openModal() { if (window.openFreeLLMModal) window.openFreeLLMModal(); },
 
     getKeys() {
