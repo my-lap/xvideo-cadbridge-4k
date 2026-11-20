@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cadbridge-pro-v31.3-dual-sync-bridge';
+const CACHE_NAME = 'cadbridge-pro-v31.4-hyperspeed';
 const ASSETS = [
   './',
   './index.html',

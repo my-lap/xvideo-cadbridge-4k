@@ -100,7 +100,20 @@
       if (box) box.innerHTML = html;
     },
 
-    async discoverOpenRouterFreeModels() {
+    async discoverOpenRouterFreeModels(force = false) {
+      const CACHE_KEY = 'FREE_LLM_MODELS_CACHE_V31';
+      const CACHE_TTL_MS = 10 * 60 * 1000;
+      if (!force) {
+        try {
+          const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+          if (cached && Array.isArray(cached.models) && (Date.now() - cached.ts) < CACHE_TTL_MS) {
+            this.discoveredFreeModels = cached.models;
+            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), models: this.discoveredFreeModels })); } catch (e) {}
+          this.populateSelect();
+            return this.discoveredFreeModels;
+          }
+        } catch (e) {}
+      }
       try {
         const controller = new AbortController();
         const tid = setTimeout(() => controller.abort(), 3200);
@@ -372,6 +385,19 @@
         ok: false,
         error: errors.length ? `Failover esaurito: ${errors.join(' | ')}` : 'Inserisci almeno 1 API Key gratuita (es. OpenRouter sk-or-v1-...)'
       };
+    },
+
+    async completeStream(promptText, systemPrompt, onChunk, options = {}) {
+      const res = await this.complete(
+        promptText,
+        systemPrompt || 'Sei il Sotto-Direttore Quantitativo CED. Rispondi in modo ultra-conciso e operativo.',
+        options.imageDataUrl || null,
+        { ...options, stream: true, onToken: onChunk }
+      );
+      if (res && res.ok && !res.streamed && typeof onChunk === 'function' && res.reply) {
+        onChunk(res.reply, res.reply);
+      }
+      return res;
     },
 
     async autoCalibrateTradingParams(marketContext = {}) {

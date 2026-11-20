@@ -57,14 +57,20 @@
 
     const runTask = async (mode) => {
       const out = document.getElementById('cad-qwen4-output');
-      if (out) out.innerHTML = '⏳ Elaborazione Qwen-4 / DeepSeek 3D in corso a 0,00€...';
+      if (out) out.innerHTML = '⏳ <span style="opacity:.75">Skeleton UI attivo — streaming token Qwen-4 / DeepSeek (0,00€)...</span>';
       if (!window.FreeLLMRouter) return;
       let snap = null;
       const cv = document.querySelector('canvas');
       if (cv) {
         try { snap = cv.toDataURL('image/webp', 0.65); } catch (e) {}
       }
-      const res = await window.FreeLLMRouter.generateCAD3DAndVideoScene({ mode, project: document.title }, snap);
+      const sys = 'Sei Qwen-4 3D Architect & Digital Twin Engine. Genera camera path 3D, snippet Python Blender (bpy) e prompt 4K.';
+      const prompt = `Modalità: ${mode}. Progetto: ${document.title}.`;
+      const res = (typeof window.FreeLLMRouter.completeStream === 'function')
+        ? await window.FreeLLMRouter.completeStream(prompt, sys, (_delta, full) => {
+            if (out) out.textContent = `⚡ Streaming live (0,00€):\n${full}`;
+          }, { imageDataUrl: snap })
+        : await window.FreeLLMRouter.generateCAD3DAndVideoScene({ mode, project: document.title }, snap);
       if (out) {
         out.innerHTML = res.ok
           ? `🟢 <b>[${res.model} — 0,00€]</b>:\n${res.reply}`
