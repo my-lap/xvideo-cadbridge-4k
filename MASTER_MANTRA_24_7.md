@@ -17,3 +17,10 @@
 6. **Qwen3.8/DeepSeek/Nemotron Free Vision Router**: Esegue audit visivi multimodali e code-gen a 0,00€.
 7. **Find-Skills Scout**: Indicizza e aggiorna skill riutilizzabili (`vercel-labs/skills` + registro globale).
 8. **Watchdog Zero-Regression & Git Deployer**: Verifica `git diff` sui file protetti, esegue `node --check` e deploya su `origin/main`.
+
+## 4. Protocollo Permanente: Brag Launch Video Engine (20s)
+- **Skill Globale**: `npx skills add https://github.com/latent-spaces/brag --skill brag -y` (`brag` / `letsbrag.app`).
+- **Regola Operativa (1 CEO + 3 CED + 8 Agenti 24/24)**: per ogni progetto esistente o futuro, partendo da un singolo URL o repository, genera automaticamente il video lancio da ~20 secondi completo di:
+  - Storyboard cinetico `hyperframes`
+  - Musica sincronizzata al ritmo delle scene
+  - Copy social pronto per il post tramite `brag` / `letsbrag.app` e `FreeLLMRouter v31.3-DUAL-SYNC`.
