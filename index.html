@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Redirect...</title>
+<script>
+(function(){
+  var target = "https://xvideo-cadbridge-4k.netlify.app";
+  var repoPrefix = "/xvideo-cadbridge-4k";
+  var p = location.pathname;
+  if (p.toLowerCase().indexOf(repoPrefix.toLowerCase()) === 0) {
+    p = p.slice(repoPrefix.length);
+  }
+  if (!p || p === "/") p = "/";
+  location.replace(target + p + location.search + location.hash);
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=https://xvideo-cadbridge-4k.netlify.app"></noscript>
+</head>
+<body style="background:#030712;color:#f8fafc;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh;margin:0">
+<p>Reindirizzamento in corso... <a href="https://xvideo-cadbridge-4k.netlify.app" style="color:#00f2a1">Apri subito</a></p>
+</body>
+</html>
